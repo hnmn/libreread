@@ -202,7 +202,7 @@ func main() {
 	CheckError(err)
 	fmt.Println(b)
 
-	PutJSON(ES_PATH + "_ingest/pipeline/attachment", b)
+	PutJSON(ES_PATH+"_ingest/pipeline/attachment", b)
 
 	type Settings struct {
 		NumberOfShards   int64 `json:"number_of_shards"`
@@ -225,7 +225,7 @@ func main() {
 	CheckError(err)
 	fmt.Println(b)
 
-	PutJSON(ES_PATH + "lr_index", b)
+	PutJSON(ES_PATH+"lr_index", b)
 
 	// Initiate redis
 	client := redis.NewClient(&redis.Options{
@@ -684,6 +684,71 @@ type HrefDataStruct struct {
 	RightNone   bool   `json:"right_none"`
 }
 
+func (e *Env) _GetEPUBFragment(fileName string, flowType string, packagePath string, currentFragment string, href []string, id []string, idRef []string) *HrefDataStruct {
+	var hrefPath string
+	leftNone := false
+	rightNone := false
+
+	var currentPage int64
+
+	for i, el := range href {
+		if el == currentFragment {
+			currentId := id[i]
+
+			for j, f := range idRef {
+				if f == currentId {
+					if flowType == "next" {
+						nextIdRef := idRef[j+1]
+
+						currentPage = (int64(j) + 1) + 1
+
+						err := e.RedisClient.Set(fileName+"...current_page...", currentPage, 0).Err()
+						CheckError(err)
+
+						err = e.RedisClient.Set(fileName+"...current_fragment...", j+1, 0).Err()
+						CheckError(err)
+
+						fmt.Println("Next Fragment: " + nextIdRef)
+						hrefPath = _GetManifestId(id, href, nextIdRef, packagePath)
+
+						if j+2 >= len(idRef) {
+							rightNone = true
+						}
+					} else {
+						prevIdRef := idRef[j-1]
+
+						currentPage = (int64(j) + 1) - 1
+
+						err := e.RedisClient.Set(fileName+"...current_page...", currentPage, 0).Err()
+						CheckError(err)
+
+						err = e.RedisClient.Set(fileName+"...current_fragment...", j-1, 0).Err()
+						CheckError(err)
+
+						fmt.Println("Previous Fragment: " + prevIdRef)
+						hrefPath = _GetManifestId(id, href, prevIdRef, packagePath)
+
+						if j-2 < 0 {
+							leftNone = true
+						}
+					}
+					break
+				}
+			}
+			break
+		}
+	}
+
+	hrefData := HrefDataStruct{
+		CurrentPage: currentPage,
+		HrefPath:    hrefPath,
+		LeftNone:    leftNone,
+		RightNone:   rightNone,
+	}
+
+	return &hrefData
+}
+
 func (e *Env) SendEPUBFragment(c *gin.Context) {
 	email := _GetEmailFromSession(c)
 	if email != nil {
@@ -714,66 +779,7 @@ func (e *Env) SendEPUBFragment(c *gin.Context) {
 
 		idRef := opfMetadata.Spine.ItemRef.IdRef
 
-		var hrefPath string
-		var leftNone bool = false
-		var rightNone bool = false
-
-		var currentPage int64
-
-		for i, el := range href {
-			if el == currentFragment {
-				currentId := id[i]
-
-				for j, f := range idRef {
-					if f == currentId {
-						if flowType == "next" {
-							nextIdRef := idRef[j+1]
-
-							currentPage = (int64(j) + 1) + 1
-
-							err = e.RedisClient.Set(fileName+"...current_page...", currentPage, 0).Err()
-							CheckError(err)
-
-							err = e.RedisClient.Set(fileName+"...current_fragment...", j+1, 0).Err()
-							CheckError(err)
-
-							fmt.Println("Next Fragment: " + nextIdRef)
-							hrefPath = _GetManifestId(id, href, nextIdRef, packagePath)
-
-							if j+2 >= len(idRef) {
-								rightNone = true
-							}
-						} else {
-							prevIdRef := idRef[j-1]
-
-							currentPage = (int64(j) + 1) - 1
-
-							err = e.RedisClient.Set(fileName+"...current_page...", currentPage, 0).Err()
-							CheckError(err)
-
-							err = e.RedisClient.Set(fileName+"...current_fragment...", j-1, 0).Err()
-							CheckError(err)
-
-							fmt.Println("Previous Fragment: " + prevIdRef)
-							hrefPath = _GetManifestId(id, href, prevIdRef, packagePath)
-
-							if j-2 < 0 {
-								leftNone = true
-							}
-						}
-						break
-					}
-				}
-				break
-			}
-		}
-
-		hrefData := HrefDataStruct{
-			CurrentPage: currentPage,
-			HrefPath:    hrefPath,
-			LeftNone:    leftNone,
-			RightNone:   rightNone,
-		}
+		hrefData := e._GetEPUBFragment(fileName, flowType, packagePath, currentFragment, href, id, idRef)
 
 		c.JSON(200, hrefData)
 
