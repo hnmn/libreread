@@ -251,6 +251,7 @@ func main() {
 	r.POST("/edit-book/:bookname", env.EditBook)
 	r.GET("/delete-book/:bookname", env.DeleteBook)
 	r.GET("/load-epub-fragment/:bookname/:type", env.SendEPUBFragment)
+	r.GET("/load-epub-fragment-from-id/:bookname/:id", env.SendEPUBFragmentFromId)
 	r.GET("/get-epub-current-page", env.GetEPUBCurrentPage)
 	r.GET("/cover/:covername", SendBookCover)
 	r.GET("/books/:pagination", env.GetPagination)
@@ -718,6 +719,61 @@ type HrefDataStruct struct {
 	HrefPath    string `json:"href_path"`
 	LeftNone    bool   `json:"left_none"`
 	RightNone   bool   `json:"right_none"`
+}
+
+func (e *Env) SendEPUBFragmentFromId(c *gin.Context) {
+	email := _GetEmailFromSession(c)
+	if email != nil {
+		fileName := c.Param("bookname")
+		gotoId, err := strconv.ParseInt(c.Param("id"), 10, 64)
+		CheckError(err)
+
+		fmt.Println(gotoId)
+
+		packagePath, err := e.RedisClient.Get(fileName + "...filepath...").Result()
+		CheckError(err)
+
+		val, err := e.RedisClient.Get(fileName).Result()
+		CheckError(err)
+
+		opfMetadata := OPFMetadataStruct{}
+		json.Unmarshal([]byte(val), &opfMetadata)
+
+		href := opfMetadata.Manifest.Item.Href
+		id := opfMetadata.Manifest.Item.Id
+
+		idRef := opfMetadata.Spine.ItemRef.IdRef
+
+		err = e.RedisClient.Set(fileName+"...current_page...", gotoId, 0).Err()
+		CheckError(err)
+
+		err = e.RedisClient.Set(fileName+"...current_fragment...", gotoId-1, 0).Err()
+		CheckError(err)
+
+		hrefPath := _GetManifestId(id, href, idRef[gotoId-1], packagePath)
+
+		leftNone := false
+		rightNone := false
+
+		if gotoId-2 < 0 {
+			leftNone = true
+		}
+
+		if gotoId+1 >= int64(len(idRef)) {
+			rightNone = true
+		}
+
+		hrefData := HrefDataStruct{
+			CurrentPage: gotoId,
+			HrefPath:    hrefPath,
+			LeftNone:    leftNone,
+			RightNone:   rightNone,
+		}
+
+		c.JSON(200, hrefData)
+	} else {
+		c.String(200, "Not signed in")
+	}
 }
 
 func (e *Env) _GetEPUBFragment(fileName string, flowType string, packagePath string, currentFragment string, href []string, id []string, idRef []string) *HrefDataStruct {

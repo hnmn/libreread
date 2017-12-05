@@ -175,6 +175,26 @@
 				})
 			}
 
+			$('#currentPage').keypress(function(e) {
+				if(e.which == 13) {
+					var url = '/load-epub-fragment-from-id/{{.fileName}}/' + $(this).val()
+					$.ajax({
+						url: url,
+						type: 'GET',
+						contentType: 'application/json',
+						success: function(data) {
+							console.log(data)
+            				$('#epubIframe').hide()
+							$('#epubIframe').attr('src', data.href_path + '?random=' + (new Date()).getTime() + Math.floor(Math.random() * 1000000))
+							$('#currentPage').val(data.current_page)
+							$('.epub-prev,.epub-next').removeClass('none')
+							if (data.left_none == true) $('.epub-prev').addClass('none')
+							if (data.right_none == true) $('.epub-next').addClass('none')
+						}
+					})
+				}
+			})
+
 			if (pageChapter) {
 				data = {
 					fileName: '{{.fileName}}',
