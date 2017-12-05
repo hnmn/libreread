@@ -1249,11 +1249,16 @@ footer {
 
   .epub-body .total-pages {
     left: 50%;
-    margin-left: -30px;
+    margin-left: -46px;
     background: black;
     color: white;
     padding: 4px;
     transition: bottom 0.2s ease-in-out;
+  }
+
+  .epub-body #currentPage {
+    width: 50px;
+    height: 22px;
   }
 
   .epub-body .total-pages.down {
