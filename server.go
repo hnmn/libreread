@@ -251,6 +251,7 @@ func main() {
 	r.POST("/edit-book/:bookname", env.EditBook)
 	r.GET("/delete-book/:bookname", env.DeleteBook)
 	r.GET("/load-epub-fragment/:bookname/:type", env.SendEPUBFragment)
+	r.GET("/get-epub-current-page", env.GetEPUBCurrentPage)
 	r.GET("/cover/:covername", SendBookCover)
 	r.GET("/books/:pagination", env.GetPagination)
 	r.GET("/autocomplete", GetAutocomplete)
@@ -675,6 +676,41 @@ func (e *Env) DeleteBook(c *gin.Context) {
 		c.Redirect(302, "/")
 	}
 	c.Redirect(302, "/signin")
+}
+
+func (e *Env) GetEPUBCurrentPage(c *gin.Context) {
+	q := c.Request.URL.Query()
+
+	fileName := q["fileName"][0]
+	currentFragment := q["pageChapter"][0]
+
+	fmt.Println(currentFragment)
+
+	val, err := e.RedisClient.Get(fileName).Result()
+	CheckError(err)
+
+	opfMetadata := OPFMetadataStruct{}
+	json.Unmarshal([]byte(val), &opfMetadata)
+
+	href := opfMetadata.Manifest.Item.Href
+	id := opfMetadata.Manifest.Item.Id
+
+	idRef := opfMetadata.Spine.ItemRef.IdRef
+
+	var currentPage int64
+	for i, el := range href {
+		if el == currentFragment {
+			currentId := id[i]
+
+			for j, f := range idRef {
+				if f == currentId {
+					currentPage = int64(j) + 1
+				}
+			}
+		}
+	}
+
+	c.String(200, strconv.Itoa(int(currentPage)))
 }
 
 type HrefDataStruct struct {
