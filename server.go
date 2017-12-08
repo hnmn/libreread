@@ -39,6 +39,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blevesearch/bleve"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
@@ -83,7 +84,7 @@ func main() {
 	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS `user` " +
 		"(`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` VARCHAR(255) NOT NULL," +
 		" `email` VARCHAR(255) UNIQUE NOT NULL, `password_hash` VARCHAR(255) NOT NULL," +
-		" `confirmed` INTEGER DEFAULT 0)")
+		" `confirmed` INTEGER DEFAULT 0, `full_text_search` INTEGER DEFAULT 0)")
 	CheckError(err)
 
 	_, err = stmt.Exec()
@@ -169,63 +170,73 @@ func main() {
 	_, err = stmt.Exec()
 	CheckError(err)
 
-	type Attachment struct {
-		Field        string `json:"field"`
-		IndexedChars int64  `json:"indexed_chars"`
+	// Bleve settings
+	// Check if bleve setting already exists. If not create a new setting.
+	if _, err := os.Stat("./lr_index.bleve"); os.IsNotExist(err) {
+		mapping := bleve.NewIndexMapping()
+		index, err := bleve.New("lr_index.bleve", mapping)
+		CheckError(err)
+		err = index.Close()
+		CheckError(err)
 	}
 
-	type Processors struct {
-		Attachment Attachment `json:"attachment"`
-	}
+	// type Attachment struct {
+	// 	Field        string `json:"field"`
+	// 	IndexedChars int64  `json:"indexed_chars"`
+	// }
 
-	type AttachmentStruct struct {
-		Description string       `json:"description"`
-		Processors  []Processors `json:"processors"`
-	}
+	// type Processors struct {
+	// 	Attachment Attachment `json:"attachment"`
+	// }
 
-	// Init Elasticsearch attachment
-	attachment := &AttachmentStruct{
-		Description: "Process documents",
-		Processors: []Processors{
-			Processors{
-				Attachment: Attachment{
-					Field:        "thedata",
-					IndexedChars: -1,
-				},
-			},
-		},
-	}
+	// type AttachmentStruct struct {
+	// 	Description string       `json:"description"`
+	// 	Processors  []Processors `json:"processors"`
+	// }
 
-	fmt.Println(attachment)
+	// // Init Elasticsearch attachment
+	// attachment := &AttachmentStruct{
+	// 	Description: "Process documents",
+	// 	Processors: []Processors{
+	// 		Processors{
+	// 			Attachment: Attachment{
+	// 				Field:        "thedata",
+	// 				IndexedChars: -1,
+	// 			},
+	// 		},
+	// 	},
+	// }
 
-	b, err := json.Marshal(attachment)
-	CheckError(err)
-	fmt.Println(b)
+	// fmt.Println(attachment)
 
-	PutJSON(ES_PATH+"_ingest/pipeline/attachment", b)
+	// b, err := json.Marshal(attachment)
+	// CheckError(err)
+	// fmt.Println(b)
 
-	type Settings struct {
-		NumberOfShards   int64 `json:"number_of_shards"`
-		NumberOfReplicas int64 `json:"number_of_replicas"`
-	}
+	// PutJSON(ES_PATH+"_ingest/pipeline/attachment", b)
 
-	type IndexStruct struct {
-		Settings Settings `json:"settings"`
-	}
+	// type Settings struct {
+	// 	NumberOfShards   int64 `json:"number_of_shards"`
+	// 	NumberOfReplicas int64 `json:"number_of_replicas"`
+	// }
 
-	// Init Elasticsearch index
-	index := &IndexStruct{
-		Settings{
-			NumberOfShards:   4,
-			NumberOfReplicas: 0,
-		},
-	}
+	// type IndexStruct struct {
+	// 	Settings Settings `json:"settings"`
+	// }
 
-	b, err = json.Marshal(index)
-	CheckError(err)
-	fmt.Println(b)
+	// // Init Elasticsearch index
+	// index := &IndexStruct{
+	// 	Settings{
+	// 		NumberOfShards:   4,
+	// 		NumberOfReplicas: 0,
+	// 	},
+	// }
 
-	PutJSON(ES_PATH+"lr_index", b)
+	// b, err = json.Marshal(index)
+	// CheckError(err)
+	// fmt.Println(b)
+
+	// PutJSON(ES_PATH+"lr_index", b)
 
 	// Initiate redis
 	client := redis.NewClient(&redis.Options{
@@ -255,7 +266,7 @@ func main() {
 	r.GET("/get-epub-current-page", env.GetEPUBCurrentPage)
 	r.GET("/cover/:covername", SendBookCover)
 	r.GET("/books/:pagination", env.GetPagination)
-	r.GET("/autocomplete", GetAutocomplete)
+	r.GET("/autocomplete", env.GetAutocomplete)
 	r.GET("/collections", env.GetCollections)
 	r.GET("/add-collection", env.GetAddCollection)
 	r.POST("/post-new-collection", env.PostNewCollection)
@@ -1799,27 +1810,45 @@ func (e *Env) UploadBook(c *gin.Context) {
 
 				// Insert new book in `book` table
 				bookId := e._InsertBookRecord(title, fileName, filePath, author, url, cover, pagesInt, "pdf", uploadedOn, userId)
+				fmt.Println(bookId)
 
-				// Feed book info to ES
-				bookInfo := BookInfoStruct{
-					Title:  title,
-					Author: author,
-					URL:    url,
-					Cover:  cover,
-				}
-
-				fmt.Println(bookInfo)
-
-				indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
-				fmt.Println(indexURL)
-
-				b, err := json.Marshal(bookInfo)
+				index, err := bleve.Open("lr_index.bleve")
 				CheckError(err)
 
-				PutJSON(indexURL, b)
+				message := struct {
+					Id     string
+					Title  string
+					Author string
+				}{
+					Id:     strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****",
+					Title:  title,
+					Author: author,
+				}
 
-				// Feed book content to ES
-				go FeedPDFContent(filePath, userId, bookId, title, author, url, cover, pagesInt)
+				index.Index(message.Id, message)
+				err = index.Close()
+				CheckError(err)
+
+				// // Feed book info to ES
+				// bookInfo := BookInfoStruct{
+				// 	Title:  title,
+				// 	Author: author,
+				// 	URL:    url,
+				// 	Cover:  cover,
+				// }
+
+				// fmt.Println(bookInfo)
+
+				// indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
+				// fmt.Println(indexURL)
+
+				// b, err := json.Marshal(bookInfo)
+				// CheckError(err)
+
+				// PutJSON(indexURL, b)
+
+				// // Feed book content to ES
+				// go FeedPDFContent(filePath, userId, bookId, title, author, url, cover, pagesInt)
 
 				c.String(200, fileName+" uploaded successfully. ")
 
@@ -1846,6 +1875,9 @@ func (e *Env) UploadBook(c *gin.Context) {
 				title := opfMetadata.Metadata.Title
 				author := opfMetadata.Metadata.Author
 				cover := opfMetadata._FetchEPUBCover(packagePath, opfFilePath)
+
+				fmt.Println("Book title: " + title)
+				fmt.Println("Book author: " + author)
 
 				// Store opfMetadata in Redis
 				opfJSON, err := json.Marshal(opfMetadata)
@@ -1877,27 +1909,44 @@ func (e *Env) UploadBook(c *gin.Context) {
 				bookId := e._InsertBookRecord(title, fileName, packagePath, author, url, cover, 1, "epub", uploadedOn, userId)
 				fmt.Println(bookId)
 
-				// Feed book info to ES
-				bookInfo := BookInfoStruct{
-					Title:  title,
-					Author: author,
-					URL:    url,
-					Cover:  cover,
-				}
-
-				fmt.Println(bookInfo)
-
-				// Feed book info to ES
-				indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
-				fmt.Println(indexURL)
-
-				b, err := json.Marshal(bookInfo)
+				index, err := bleve.Open("lr_index.bleve")
 				CheckError(err)
 
-				PutJSON(indexURL, b)
+				message := struct {
+					Id     string
+					Title  string
+					Author string
+				}{
+					Id:     strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****",
+					Title:  title,
+					Author: author,
+				}
 
-				// Feed book detail to ES
-				go opfMetadata._FeedEPUBContent(packagePath, title, author, cover, url, userId, bookId)
+				index.Index(message.Id, message)
+				err = index.Close()
+				CheckError(err)
+
+				// // Feed book info to ES
+				// bookInfo := BookInfoStruct{
+				// 	Title:  title,
+				// 	Author: author,
+				// 	URL:    url,
+				// 	Cover:  cover,
+				// }
+
+				// fmt.Println(bookInfo)
+
+				// // Feed book info to ES
+				// indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
+				// fmt.Println(indexURL)
+
+				// b, err := json.Marshal(bookInfo)
+				// CheckError(err)
+
+				// PutJSON(indexURL, b)
+
+				// // Feed book detail to ES
+				// go opfMetadata._FeedEPUBContent(packagePath, title, author, cover, url, userId, bookId)
 
 				c.String(200, fileName+" uploaded successfully. ")
 			}
@@ -2011,84 +2060,140 @@ func GetJSONPassPayload(url string, payload []byte) []byte {
 	return content
 }
 
-func GetAutocomplete(c *gin.Context) {
+func (e *Env) GetAutocomplete(c *gin.Context) {
 	q := c.Request.URL.Query()
 	term := q["term"][0]
 	fmt.Println(term)
 
-	payloadInfo := &BookInfoPayloadStruct{
-		Source: []string{"title", "author", "url", "cover"},
-		Query: BookInfoQuery{
-			MultiMatch: MultiMatchQuery{
-				Query:  term,
-				Fields: []string{"title", "author"},
-			},
-		},
-	}
+	email := _GetEmailFromSession(c)
+	if email != nil {
+		rows, err := e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
+		CheckError(err)
 
-	b, err := json.Marshal(payloadInfo)
-	CheckError(err)
+		var fts int64
+		if rows.Next() {
+			err := rows.Scan(&fts)
+			CheckError(err)
+		}
+		rows.Close()
 
-	indexURL := ES_PATH + "lr_index/book_info/_search"
+		if fts == 0 {
+			index, _ := bleve.Open("lr_index.bleve")
+			// err = index.Delete("1_3")
+			// CheckError(err)
 
-	res := GetJSONPassPayload(indexURL, b)
+			query := bleve.NewMatchQuery(term)
+			search := bleve.NewSearchRequest(query)
+			search.Highlight = bleve.NewHighlightWithStyle("html")
+			search.Highlight.AddField("Title")
+			search.Highlight.AddField("Author")
+			searchResults, err := index.Search(search)
+			CheckError(err)
 
-	target := BookInfoResultStruct{}
-	json.Unmarshal(res, &target)
+			err = index.Close()
+			CheckError(err)
 
-	hits := target.Hits.Hits
-	hitsBIS := []BookInfoStruct{}
-	for _, el := range hits {
-		hitsBIS = append(hitsBIS, BookInfoStruct{
-			Title:  el.Source.Title,
-			Author: el.Source.Author,
-			URL:    el.Source.URL,
-			Cover:  el.Source.Cover,
-		})
-	}
+			hitsBIS := []BookInfoStruct{}
+			srSprint := fmt.Sprintf("%s", searchResults.Hits)
+			if srSprint != "[]" {
+				srSplit := strings.Split(srSprint, "] [")
+				srSplit[0] = strings.Split(srSplit[0], "[[")[1]
+				srSplit[len(srSplit)-1] = strings.Split(srSplit[len(srSplit)-1], "]]")[0]
 
-	payloadDetail := &BookDetailPayloadStruct{
-		Source: []string{"title", "author", "url", "se_url", "cover", "page", "format"},
-		Query: BookDetailQuery{
-			MatchPhrase: BookDetailMatchPhrase{
-				AttachmentContent: term,
-			},
-		},
-		Highlight: BookDetailHighlight{
-			Fields: BookDetailHighlightFields{
-				AttachmentContent: BookDetailHighlightAttachmentContent{
-					FragmentSize:      150,
-					NumberOfFragments: 3,
-					NoMatchSize:       150,
+				for _, el := range srSplit {
+					result := strings.Split(el, "*****")
+					fmt.Println(result)
+					hitsBIS = append(hitsBIS, BookInfoStruct{
+						Title:  result[2],
+						Author: result[3],
+						Cover:  result[4],
+						URL:    result[5],
+					})
+				}
+			}
+
+			bsr := BookSearchResult{
+				BookInfo:   hitsBIS,
+				BookDetail: []BookDetailHitsHits{},
+			}
+
+			c.JSON(200, bsr)
+		} else {
+			payloadInfo := &BookInfoPayloadStruct{
+				Source: []string{"title", "author", "url", "cover"},
+				Query: BookInfoQuery{
+					MultiMatch: MultiMatchQuery{
+						Query:  term,
+						Fields: []string{"title", "author"},
+					},
 				},
-			},
-		},
+			}
+
+			b, err := json.Marshal(payloadInfo)
+			CheckError(err)
+
+			indexURL := ES_PATH + "lr_index/book_info/_search"
+
+			res := GetJSONPassPayload(indexURL, b)
+
+			target := BookInfoResultStruct{}
+			json.Unmarshal(res, &target)
+
+			hits := target.Hits.Hits
+			hitsBIS := []BookInfoStruct{}
+			for _, el := range hits {
+				hitsBIS = append(hitsBIS, BookInfoStruct{
+					Title:  el.Source.Title,
+					Author: el.Source.Author,
+					URL:    el.Source.URL,
+					Cover:  el.Source.Cover,
+				})
+			}
+
+			payloadDetail := &BookDetailPayloadStruct{
+				Source: []string{"title", "author", "url", "se_url", "cover", "page", "format"},
+				Query: BookDetailQuery{
+					MatchPhrase: BookDetailMatchPhrase{
+						AttachmentContent: term,
+					},
+				},
+				Highlight: BookDetailHighlight{
+					Fields: BookDetailHighlightFields{
+						AttachmentContent: BookDetailHighlightAttachmentContent{
+							FragmentSize:      150,
+							NumberOfFragments: 3,
+							NoMatchSize:       150,
+						},
+					},
+				},
+			}
+			b, err = json.Marshal(payloadDetail)
+			CheckError(err)
+
+			indexURL = ES_PATH + "lr_index/book_detail/_search"
+
+			res = GetJSONPassPayload(indexURL, b)
+
+			target2 := BookDetailResultStruct{}
+			json.Unmarshal(res, &target2)
+
+			hits2 := target2.Hits.Hits
+			hitsBDS := []BookDetailHitsHits{}
+			for _, el := range hits2 {
+				hitsBDS = append(hitsBDS, BookDetailHitsHits{
+					Source:    el.Source,
+					Highlight: el.Highlight,
+				})
+			}
+
+			bsr := BookSearchResult{
+				BookInfo:   hitsBIS,
+				BookDetail: hitsBDS,
+			}
+
+			c.JSON(200, bsr)
+		}
 	}
-	b, err = json.Marshal(payloadDetail)
-	CheckError(err)
-
-	indexURL = ES_PATH + "lr_index/book_detail/_search"
-
-	res = GetJSONPassPayload(indexURL, b)
-
-	target2 := BookDetailResultStruct{}
-	json.Unmarshal(res, &target2)
-
-	hits2 := target2.Hits.Hits
-	hitsBDS := []BookDetailHitsHits{}
-	for _, el := range hits2 {
-		hitsBDS = append(hitsBDS, BookDetailHitsHits{
-			Source:    el.Source,
-			Highlight: el.Highlight,
-		})
-	}
-
-	bsr := BookSearchResult{
-		BookInfo:   hitsBIS,
-		BookDetail: hitsBDS,
-	}
-
-	c.JSON(200, bsr)
 }
 
 type PDFHighlightStruct struct {

@@ -5,3 +5,4 @@ uploads
 server
 quote
 dump.rdb
+lr_index.bleve
