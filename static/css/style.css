@@ -604,7 +604,7 @@ input[type="submit"] {
   margin-bottom: 30px;
 }
 
-.currently-reading-container .crc-bg, .books-container {
+.currently-reading-container .crc-bg, .books-container, .settings-container {
 	width: 1290px;
 	margin: 0 auto;
 	padding: 30px;
@@ -1059,6 +1059,41 @@ input[type="submit"] {
 .books-container .info .delete-collection-button {
   background: #FF4848;
   margin-left: 20px;
+}
+
+.s-email {
+  width: 200px;
+  margin-left: 10px;
+}
+
+.password-box {
+  margin-top: 30px;
+  overflow: hidden;
+}
+
+.password-box .pb-item {
+  margin-top: 10px;
+}
+
+.s-password {
+  display: block;
+  margin-top: 10px;
+}
+
+.pb-item {
+  display: none;
+}
+
+.submit-settings {
+  float: left;
+  background: #FF4848;
+  text-decoration: none;
+  color: white;
+  padding-left: 1.5em;
+  padding-right: 1.5em;
+  padding-bottom: .6em;
+  padding-top: .4em;
+  margin-top: 30px;
 }
 
 footer {

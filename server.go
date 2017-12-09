@@ -278,6 +278,7 @@ func main() {
 	r.POST("/post-pdf-highlight-comment", env.PostPDFHighlightComment)
 	r.POST("/delete-pdf-highlight", env.DeletePDFHighlight)
 	r.POST("/save-epub-highlight", env.SaveEPUBHighlight)
+	r.GET("/settings", env.GetSettings)
 
 	// Listen and serve on 0.0.0.0:8080
 	r.Run(":8080")
@@ -2777,6 +2778,17 @@ func (e *Env) DeleteCollection(c *gin.Context) {
 		CheckError(err)
 
 		c.Redirect(302, "/collections")
+	} else {
+		c.Redirect(302, "/signin")
+	}
+}
+
+func (e *Env) GetSettings(c *gin.Context) {
+	email := _GetEmailFromSession(c)
+	if email != nil {
+		c.HTML(302, "settings.html", gin.H{
+			"email": email.(string),
+		})
 	} else {
 		c.Redirect(302, "/signin")
 	}

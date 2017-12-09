@@ -315,6 +315,21 @@ $(function() {
 		}
 	})
 
+	$('#changePassword').prop("checked", false)
+
+	$('#changePassword').change(function(){
+		if ($(this).is(":checked")) {
+			$('.pb-item').fadeIn()
+		} else {
+			$('.pb-item').hide()
+		}
+	})
+
+	$('.submit-settings').click(function(e) {
+		e.preventDefault()
+		alert('yes')
+	})
+
 	$(document).click(function(e) {
 		if ( $(e.target).closest('.search-dropdown').length == 0 && $(e.target).closest('.search-box').length == 0 ) {
 			$('.search-dropdown').hide()
