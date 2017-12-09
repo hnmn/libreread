@@ -711,6 +711,16 @@ func (e *Env) DeleteBook(c *gin.Context) {
 		_, err = stmt.Exec(fileName)
 		CheckError(err)
 
+		currentlyReadingId := e._CheckCurrentlyReading(bookId)
+
+		if currentlyReadingId != 0 {
+			stmt, err := e.db.Prepare("delete from currently_reading where book_id=?")
+			CheckError(err)
+
+			_, err = stmt.Exec(currentlyReadingId)
+			CheckError(err)
+		}
+
 		rows, err = e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
 		CheckError(err)
 
