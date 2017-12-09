@@ -271,6 +271,7 @@ func main() {
 	r.GET("/add-collection", env.GetAddCollection)
 	r.POST("/post-new-collection", env.PostNewCollection)
 	r.GET("/collection/:id", env.GetCollection)
+	r.GET("/delete-collection/:id", env.DeleteCollection)
 	r.POST("/post-pdf-highlight", env.PostPDFHighlight)
 	r.GET("/get-pdf-highlights", env.GetPDFHighlights)
 	r.POST("/post-pdf-highlight-color", env.PostPDFHighlightColor)
@@ -2695,16 +2696,17 @@ func (e *Env) GetCollection(c *gin.Context) {
 	if email != nil {
 		collectionId := c.Param("id")
 
-		rows, err := e.db.Query("select title, description, books from collection where id = ?", collectionId)
+		rows, err := e.db.Query("select id, title, description, books from collection where id = ?", collectionId)
 		CheckError(err)
 
 		var (
+			id          int64
 			title       string
 			description string
 			cbooks      string
 		)
 		if rows.Next() {
-			err := rows.Scan(&title, &description, &cbooks)
+			err := rows.Scan(&id, &title, &description, &cbooks)
 			CheckError(err)
 		}
 		rows.Close()
@@ -2750,6 +2752,7 @@ func (e *Env) GetCollection(c *gin.Context) {
 		booksListXtraSmall := b
 
 		c.HTML(302, "collection_item.html", gin.H{
+			"id":                 id,
 			"title":              title,
 			"description":        description,
 			"booksList":          booksList,
@@ -2757,6 +2760,23 @@ func (e *Env) GetCollection(c *gin.Context) {
 			"booksListSmall":     booksListSmall,
 			"booksListXtraSmall": booksListXtraSmall,
 		})
+	} else {
+		c.Redirect(302, "/signin")
+	}
+}
+
+func (e *Env) DeleteCollection(c *gin.Context) {
+	email := _GetEmailFromSession(c)
+	if email != nil {
+		collectionId := c.Param("id")
+
+		stmt, err := e.db.Prepare("delete from collection where id=?")
+		CheckError(err)
+
+		_, err = stmt.Exec(collectionId)
+		CheckError(err)
+
+		c.Redirect(302, "/collections")
 	} else {
 		c.Redirect(302, "/signin")
 	}

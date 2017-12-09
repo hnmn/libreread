@@ -306,6 +306,15 @@ $(function() {
 		})
 	})
 
+	$('.delete-collection-button').click(function(e) {
+		e.preventDefault()
+
+		var href = $(this).attr('href')
+		if (confirm("Are you sure, you want to delete this collection?") == true) {
+			window.location.href = href
+		}
+	})
+
 	$(document).click(function(e) {
 		if ( $(e.target).closest('.search-dropdown').length == 0 && $(e.target).closest('.search-box').length == 0 ) {
 			$('.search-dropdown').hide()

@@ -1039,6 +1039,28 @@ input[type="submit"] {
   line-height: 24px;
 }
 
+.books-container .info .buttons {
+  width: 185px;
+  margin: 20px auto;
+  overflow: hidden;
+}
+
+.books-container .info .edit-collection-button, .books-container .info .delete-collection-button {
+  float: left;
+  background: #555555;
+  text-decoration: none;
+  color: white;
+  padding-left: 1.5em;
+  padding-right: 1.5em;
+  padding-bottom: .6em;
+  padding-top: .4em;
+}
+
+.books-container .info .delete-collection-button {
+  background: #FF4848;
+  margin-left: 20px;
+}
+
 footer {
   position: absolute;
 	width: 100%;
