@@ -170,73 +170,73 @@ func main() {
 	_, err = stmt.Exec()
 	CheckError(err)
 
-	// // Bleve settings
-	// // Check if bleve setting already exists. If not create a new setting.
-	// if _, err := os.Stat("./lr_index.bleve"); os.IsNotExist(err) {
-	// 	mapping := bleve.NewIndexMapping()
-	// 	index, err := bleve.New("lr_index.bleve", mapping)
-	// 	CheckError(err)
-	// 	err = index.Close()
-	// 	CheckError(err)
+	// Bleve settings
+	// Check if bleve setting already exists. If not create a new setting.
+	if _, err := os.Stat("./lr_index.bleve"); os.IsNotExist(err) {
+		mapping := bleve.NewIndexMapping()
+		index, err := bleve.New("lr_index.bleve", mapping)
+		CheckError(err)
+		err = index.Close()
+		CheckError(err)
+	}
+
+	// type Attachment struct {
+	// 	Field        string `json:"field"`
+	// 	IndexedChars int64  `json:"indexed_chars"`
 	// }
 
-	type Attachment struct {
-		Field        string `json:"field"`
-		IndexedChars int64  `json:"indexed_chars"`
-	}
+	// type Processors struct {
+	// 	Attachment Attachment `json:"attachment"`
+	// }
 
-	type Processors struct {
-		Attachment Attachment `json:"attachment"`
-	}
+	// type AttachmentStruct struct {
+	// 	Description string       `json:"description"`
+	// 	Processors  []Processors `json:"processors"`
+	// }
 
-	type AttachmentStruct struct {
-		Description string       `json:"description"`
-		Processors  []Processors `json:"processors"`
-	}
+	// // Init Elasticsearch attachment
+	// attachment := &AttachmentStruct{
+	// 	Description: "Process documents",
+	// 	Processors: []Processors{
+	// 		Processors{
+	// 			Attachment: Attachment{
+	// 				Field:        "thedata",
+	// 				IndexedChars: -1,
+	// 			},
+	// 		},
+	// 	},
+	// }
 
-	// Init Elasticsearch attachment
-	attachment := &AttachmentStruct{
-		Description: "Process documents",
-		Processors: []Processors{
-			Processors{
-				Attachment: Attachment{
-					Field:        "thedata",
-					IndexedChars: -1,
-				},
-			},
-		},
-	}
+	// fmt.Println(attachment)
 
-	fmt.Println(attachment)
+	// b, err := json.Marshal(attachment)
+	// CheckError(err)
+	// fmt.Println(b)
 
-	b, err := json.Marshal(attachment)
-	CheckError(err)
-	fmt.Println(b)
+	// PutJSON(ES_PATH+"_ingest/pipeline/attachment", b)
 
-	PutJSON(ES_PATH+"_ingest/pipeline/attachment", b)
+	// type Settings struct {
+	// 	NumberOfShards   int64 `json:"number_of_shards"`
+	// 	NumberOfReplicas int64 `json:"number_of_replicas"`
+	// }
 
-	type Settings struct {
-		NumberOfShards   int64 `json:"number_of_shards"`
-		NumberOfReplicas int64 `json:"number_of_replicas"`
-	}
+	// type IndexStruct struct {
+	// 	Settings Settings `json:"settings"`
+	// }
 
-	type IndexStruct struct {
-		Settings Settings `json:"settings"`
-	}
+	// // Init Elasticsearch index
+	// index := &IndexStruct{
+	// 	Settings{
+	// 		NumberOfShards:   4,
+	// 		NumberOfReplicas: 0,
+	// 	},
+	// }
 
-	// Init Elasticsearch index
-	index := &IndexStruct{
-		Settings{
-			NumberOfShards:   4,
-			NumberOfReplicas: 0,
-		},
-	}
+	// b, err = json.Marshal(index)
+	// CheckError(err)
+	// fmt.Println(b)
 
-	b, err = json.Marshal(index)
-	CheckError(err)
-	fmt.Println(b)
-
-	PutJSON(ES_PATH+"lr_index", b)
+	// PutJSON(ES_PATH+"lr_index", b)
 
 	// Initiate redis
 	client := redis.NewClient(&redis.Options{
