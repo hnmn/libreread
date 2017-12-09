@@ -554,6 +554,43 @@ func (e *Env) EditBook(c *gin.Context) {
 		fileName := c.PostForm("filename")
 		fmt.Println(fileName)
 
+		rows, err := e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
+		CheckError(err)
+
+		var fts int64
+		if rows.Next() {
+			err := rows.Scan(&fts)
+			CheckError(err)
+		}
+		rows.Close()
+
+		rows, err = e.db.Query("SELECT id, title, author, cover, url from book where filename=?", fileName)
+
+		var (
+			bookId  int64
+			oTitle  string
+			oAuthor string
+			oCover  string
+			oURL    string
+		)
+
+		for rows.Next() {
+			err = rows.Scan(&bookId, &oTitle, &oAuthor, &oCover, &oURL)
+			CheckError(err)
+		}
+		rows.Close()
+
+		if fts == 0 {
+
+			index, _ := bleve.Open("lr_index.bleve")
+			indexId := strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + oTitle + "*****" + oAuthor + "*****" + oCover + "*****" + oURL + "*****"
+			err = index.Delete(indexId)
+			CheckError(err)
+
+			err = index.Close()
+			CheckError(err)
+		}
+
 		title := c.PostForm("title")
 		fmt.Println(title)
 
@@ -566,63 +603,69 @@ func (e *Env) EditBook(c *gin.Context) {
 		_, err = stmt.Exec(title, author, fileName)
 		CheckError(err)
 
-		var bookId int64
-		var cover string
-		rows, err := e.db.Query("select id, cover from book where filename=?", fileName)
-		CheckError(err)
-
-		for rows.Next() {
-			err = rows.Scan(&bookId, &cover)
-			CheckError(err)
-		}
-		rows.Close()
-
 		file, _ := c.FormFile("cover")
 		if file != nil {
 			fmt.Println(file.Filename)
 			c.SaveUploadedFile(file, "./uploads/img/"+file.Filename)
 
-			cover = "./uploads/img/" + file.Filename
+			oCover = "./uploads/img/" + file.Filename
 
 			stmt, err := e.db.Prepare("update book set cover=? where filename=?")
 			CheckError(err)
 
-			_, err = stmt.Exec(cover, fileName)
+			_, err = stmt.Exec(oCover, fileName)
 			CheckError(err)
 		}
 
-		bms := BookMetadataEditStruct{
-			Doc: BMESDoc{
+		if fts == 0 {
+			message := struct {
+				Id     string
+				Title  string
+				Author string
+			}{
+				Id:     strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + oCover + "*****" + oURL + "*****",
 				Title:  title,
 				Author: author,
-				Cover:  cover,
-			},
-		}
+			}
 
-		fmt.Println(bms)
+			index, _ := bleve.Open("lr_index.bleve")
+			index.Index(message.Id, message)
+			err = index.Close()
+			CheckError(err)
+		} else {
+			bms := BookMetadataEditStruct{
+				Doc: BMESDoc{
+					Title:  title,
+					Author: author,
+					Cover:  oCover,
+				},
+			}
 
-		indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "/_update"
-		fmt.Println(indexURL)
+			fmt.Println(bms)
 
-		b, err := json.Marshal(bms)
-		CheckError(err)
-
-		PostJSON(indexURL, b)
-
-		val, err := e.RedisClient.Get(fileName + "...total_pages...").Result()
-		CheckError(err)
-
-		totalPages, err := strconv.ParseInt(val, 10, 64)
-		CheckError(err)
-
-		for i := 0; i < int(totalPages); i++ {
-			indexURL := ES_PATH + "lr_index/book_detail/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "_" + strconv.Itoa(i) + "/_update"
+			indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "/_update"
 			fmt.Println(indexURL)
 
 			b, err := json.Marshal(bms)
 			CheckError(err)
 
 			PostJSON(indexURL, b)
+
+			val, err := e.RedisClient.Get(fileName + "...total_pages...").Result()
+			CheckError(err)
+
+			totalPages, err := strconv.ParseInt(val, 10, 64)
+			CheckError(err)
+
+			for i := 0; i < int(totalPages); i++ {
+				indexURL := ES_PATH + "lr_index/book_detail/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "_" + strconv.Itoa(i) + "/_update"
+				fmt.Println(indexURL)
+
+				b, err := json.Marshal(bms)
+				CheckError(err)
+
+				PostJSON(indexURL, b)
+			}
 		}
 
 		c.String(200, "Book metadata saved successfully")
