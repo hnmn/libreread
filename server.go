@@ -695,11 +695,12 @@ func (e *Env) DeleteBook(c *gin.Context) {
 		fmt.Println(fileName)
 
 		var bookId int64
-		rows, err := e.db.Query("select id from book where filename=?", fileName)
+		var title, author, cover, url string
+		rows, err := e.db.Query("select id, title, author, cover, url from book where filename=?", fileName)
 		CheckError(err)
 
 		for rows.Next() {
-			err = rows.Scan(&bookId)
+			err = rows.Scan(&bookId, &title, &author, &cover, &url)
 			CheckError(err)
 		}
 		rows.Close()
@@ -710,22 +711,42 @@ func (e *Env) DeleteBook(c *gin.Context) {
 		_, err = stmt.Exec(fileName)
 		CheckError(err)
 
-		indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
-		fmt.Println(indexURL)
-
-		DeleteHTTPRequest(indexURL)
-
-		val, err := e.RedisClient.Get(fileName + "...total_pages...").Result()
+		rows, err = e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
 		CheckError(err)
 
-		totalPages, err := strconv.ParseInt(val, 10, 64)
-		CheckError(err)
+		var fts int64
+		if rows.Next() {
+			err := rows.Scan(&fts)
+			CheckError(err)
+		}
+		rows.Close()
 
-		for i := 0; i <= int(totalPages); i++ {
-			indexURL := ES_PATH + "lr_index/book_detail/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "_" + strconv.Itoa(i)
+		if fts == 0 {
+			index, _ := bleve.Open("lr_index.bleve")
+			indexId := strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****"
+			err = index.Delete(indexId)
+			CheckError(err)
+
+			err = index.Close()
+			CheckError(err)
+		} else {
+			indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
 			fmt.Println(indexURL)
 
 			DeleteHTTPRequest(indexURL)
+
+			val, err := e.RedisClient.Get(fileName + "...total_pages...").Result()
+			CheckError(err)
+
+			totalPages, err := strconv.ParseInt(val, 10, 64)
+			CheckError(err)
+
+			for i := 0; i <= int(totalPages); i++ {
+				indexURL := ES_PATH + "lr_index/book_detail/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "_" + strconv.Itoa(i)
+				fmt.Println(indexURL)
+
+				DeleteHTTPRequest(indexURL)
+			}
 		}
 
 		c.Redirect(302, "/")
