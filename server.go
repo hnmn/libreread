@@ -1803,6 +1803,16 @@ func (e *Env) UploadBook(c *gin.Context) {
 	if email != nil {
 		userId := e._GetUserId(email.(string))
 
+		rows, err := e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
+		CheckError(err)
+
+		var fts int64
+		if rows.Next() {
+			err := rows.Scan(&fts)
+			CheckError(err)
+		}
+		rows.Close()
+
 		multipart, err := c.Request.MultipartReader()
 		CheckError(err)
 
@@ -1876,43 +1886,45 @@ func (e *Env) UploadBook(c *gin.Context) {
 				bookId := e._InsertBookRecord(title, fileName, filePath, author, url, cover, pagesInt, "pdf", uploadedOn, userId)
 				fmt.Println(bookId)
 
-				index, err := bleve.Open("lr_index.bleve")
-				CheckError(err)
+				if fts == 0 {
+					index, err := bleve.Open("lr_index.bleve")
+					CheckError(err)
 
-				message := struct {
-					Id     string
-					Title  string
-					Author string
-				}{
-					Id:     strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****",
-					Title:  title,
-					Author: author,
+					message := struct {
+						Id     string
+						Title  string
+						Author string
+					}{
+						Id:     strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****",
+						Title:  title,
+						Author: author,
+					}
+
+					index.Index(message.Id, message)
+					err = index.Close()
+					CheckError(err)
+				} else {
+					// Feed book info to ES
+					bookInfo := BookInfoStruct{
+						Title:  title,
+						Author: author,
+						URL:    url,
+						Cover:  cover,
+					}
+
+					fmt.Println(bookInfo)
+
+					indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
+					fmt.Println(indexURL)
+
+					b, err := json.Marshal(bookInfo)
+					CheckError(err)
+
+					PutJSON(indexURL, b)
+
+					// Feed book content to ES
+					go FeedPDFContent(filePath, userId, bookId, title, author, url, cover, pagesInt)
 				}
-
-				index.Index(message.Id, message)
-				err = index.Close()
-				CheckError(err)
-
-				// // Feed book info to ES
-				// bookInfo := BookInfoStruct{
-				// 	Title:  title,
-				// 	Author: author,
-				// 	URL:    url,
-				// 	Cover:  cover,
-				// }
-
-				// fmt.Println(bookInfo)
-
-				// indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
-				// fmt.Println(indexURL)
-
-				// b, err := json.Marshal(bookInfo)
-				// CheckError(err)
-
-				// PutJSON(indexURL, b)
-
-				// // Feed book content to ES
-				// go FeedPDFContent(filePath, userId, bookId, title, author, url, cover, pagesInt)
 
 				c.String(200, fileName+" uploaded successfully. ")
 
@@ -1973,44 +1985,46 @@ func (e *Env) UploadBook(c *gin.Context) {
 				bookId := e._InsertBookRecord(title, fileName, packagePath, author, url, cover, 1, "epub", uploadedOn, userId)
 				fmt.Println(bookId)
 
-				index, err := bleve.Open("lr_index.bleve")
-				CheckError(err)
+				if fts == 0 {
+					index, err := bleve.Open("lr_index.bleve")
+					CheckError(err)
 
-				message := struct {
-					Id     string
-					Title  string
-					Author string
-				}{
-					Id:     strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****",
-					Title:  title,
-					Author: author,
+					message := struct {
+						Id     string
+						Title  string
+						Author string
+					}{
+						Id:     strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****",
+						Title:  title,
+						Author: author,
+					}
+
+					index.Index(message.Id, message)
+					err = index.Close()
+					CheckError(err)
+				} else {
+					// Feed book info to ES
+					bookInfo := BookInfoStruct{
+						Title:  title,
+						Author: author,
+						URL:    url,
+						Cover:  cover,
+					}
+
+					fmt.Println(bookInfo)
+
+					// Feed book info to ES
+					indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
+					fmt.Println(indexURL)
+
+					b, err := json.Marshal(bookInfo)
+					CheckError(err)
+
+					PutJSON(indexURL, b)
+
+					// Feed book detail to ES
+					go opfMetadata._FeedEPUBContent(packagePath, title, author, cover, url, userId, bookId)
 				}
-
-				index.Index(message.Id, message)
-				err = index.Close()
-				CheckError(err)
-
-				// // Feed book info to ES
-				// bookInfo := BookInfoStruct{
-				// 	Title:  title,
-				// 	Author: author,
-				// 	URL:    url,
-				// 	Cover:  cover,
-				// }
-
-				// fmt.Println(bookInfo)
-
-				// // Feed book info to ES
-				// indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
-				// fmt.Println(indexURL)
-
-				// b, err := json.Marshal(bookInfo)
-				// CheckError(err)
-
-				// PutJSON(indexURL, b)
-
-				// // Feed book detail to ES
-				// go opfMetadata._FeedEPUBContent(packagePath, title, author, cover, url, userId, bookId)
 
 				c.String(200, fileName+" uploaded successfully. ")
 			}
