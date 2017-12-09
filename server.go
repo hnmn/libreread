@@ -84,7 +84,7 @@ func main() {
 	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS `user` " +
 		"(`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` VARCHAR(255) NOT NULL," +
 		" `email` VARCHAR(255) UNIQUE NOT NULL, `password_hash` VARCHAR(255) NOT NULL," +
-		" `confirmed` INTEGER DEFAULT 0, `full_text_search` INTEGER DEFAULT 1)")
+		" `confirmed` INTEGER DEFAULT 0, `full_text_search` INTEGER DEFAULT 0)")
 	CheckError(err)
 
 	_, err = stmt.Exec()
