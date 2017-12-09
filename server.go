@@ -764,6 +764,12 @@ func (e *Env) DeleteBook(c *gin.Context) {
 	c.Redirect(302, "/signin")
 }
 
+type CurrentPageDataStruct struct {
+	CurrentPage int64 `json:"current_page"`
+	LeftNone    bool  `json:"left_none"`
+	RightNone   bool  `json:"right_none"`
+}
+
 func (e *Env) GetEPUBCurrentPage(c *gin.Context) {
 	q := c.Request.URL.Query()
 
@@ -784,6 +790,7 @@ func (e *Env) GetEPUBCurrentPage(c *gin.Context) {
 	idRef := opfMetadata.Spine.ItemRef.IdRef
 
 	var currentPage int64
+	leftNone, rightNone := false, false
 	for i, el := range href {
 		if el == currentFragment {
 			currentId := id[i]
@@ -791,12 +798,25 @@ func (e *Env) GetEPUBCurrentPage(c *gin.Context) {
 			for j, f := range idRef {
 				if f == currentId {
 					currentPage = int64(j) + 1
+					fmt.Println(currentPage)
+					if currentPage-1 <= 0 {
+						leftNone = true
+					}
+					if currentPage >= int64(len(idRef)) {
+						rightNone = true
+					}
 				}
 			}
 		}
 	}
 
-	c.String(200, strconv.Itoa(int(currentPage)))
+	cpds := CurrentPageDataStruct{
+		CurrentPage: currentPage,
+		LeftNone:    leftNone,
+		RightNone:   rightNone,
+	}
+
+	c.JSON(200, cpds)
 }
 
 type HrefDataStruct struct {
