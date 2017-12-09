@@ -16,17 +16,15 @@ GNU General Public License for more details.--->
 along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.--->
 
 # LibreRead
-Free(Libre) Ebook reader coming soon. If you think what I'm building is promising, you could [sponsor my development](https://www.patreon.com/mysticmode). That will help me continue working on this software full-time.
+Self-hosted Free(Libre) Ebook Reader. https://libreread.org
 
 ![Alt text](/static/img/screenshot.png?raw=true "Home Page")
 
-### Features and Goals:
- - Self-hosted.
- - Simple setup script.
- - Privacy is the primary focus.
- - Browser based, responsive design.
- - Full-text search through all the ebooks and find the relevant content.
- - Highlight your favorite content.
- - Add annotations to your favorite content.
- - Group books into collections.
- - Currently supports PDF files. EPUB support coming soon.
+### Features:
+ - Easy installation
+ - Built using Golang
+ - Browser-based
+ - Responsive design
+ - Full-text search
+ - Highlight & Annotate
+ - Supports PDF & EPUB
