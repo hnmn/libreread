@@ -1239,15 +1239,20 @@ func (e *Env) GetSignIn(c *gin.Context) {
 	}
 	fmt.Println(cEmail)
 
-	if cEmail != "" {
-		c.HTML(302, "signin.html", gin.H{
-			"enableSignUp": false,
-		})
-	} else {
-		c.HTML(302, "signin.html", gin.H{
-			"enableSignUp": true,
-		})
+	enableSignUp := false
+	if cEmail == "" {
+		enableSignUp = true
 	}
+
+	demoLabel := false
+	if os.Getenv("LIBREREAD_DEMO_SERVER") == "1" {
+		demoLabel = true
+	}
+
+	c.HTML(302, "signin.html", gin.H{
+		"enableSignUp": enableSignUp,
+		"demoLabel":    demoLabel,
+	})
 }
 
 func GetSignOut(c *gin.Context) {

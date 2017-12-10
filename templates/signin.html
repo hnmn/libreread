@@ -47,6 +47,9 @@ along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.
 	<div class="page-container">
 		<form class="sign-form" action="/signin" method="post">
 			<label>Sign in</label>
+			{{ if .demoLabel }}
+				<div style="margin-top: 15px; text-align: center;">Email: demo, Password: demo</div>
+			{{ end }}
 			<input type="text" name="email" placeholder="Email">
 			<input type="password" name="password" placeholder="Password">
 			<input type="submit" value="Submit">
