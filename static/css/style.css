@@ -537,6 +537,12 @@ input[type="submit"] {
   cursor: pointer;
 }
 
+.sign-form .forget-password {
+  display: block;
+  text-align: center;
+  margin-top: 20px;
+}
+
 .quote-of-the-day {
 	width: 600px;
 	margin: 60px auto;
@@ -1328,6 +1334,14 @@ footer {
 
 @media screen
   and (max-device-width: 470px) {
+
+    .sign-form {
+      width: 100%;
+    }
+
+    .sign-form input[type="text"], .sign-form input[type="password"] {
+      width: 80%;
+    }
 
   	.search-dropdown {
   		max-height: 340px;
