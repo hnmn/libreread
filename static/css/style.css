@@ -724,7 +724,9 @@ input[type="submit"] {
 .bc-books-list-medium a img,
 .bc-books-list-small a img, 
 .bc-books-list-xtra-small a img {
-	width: 180px;
+  width: 180px;
+  background: gray;
+  min-height: 50px;
 }
 
 .bc-books-list a, .bc-books-list-medium a, .bc-books-list-small a {
