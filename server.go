@@ -2839,7 +2839,7 @@ type PostSettingsStruct struct {
 func (e *Env) PostSettings(c *gin.Context) {
 	email := _GetEmailFromSession(c)
 	if email != nil {
-		if os.Getenv("LIBREREAD_DEMO_SERVER") == string(1) {
+		if os.Getenv("LIBREREAD_DEMO_SERVER") == "1" {
 			c.String(200, "You can't change settings in the demo server ;)")
 		} else {
 			postSettings := PostSettingsStruct{}
