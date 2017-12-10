@@ -1378,4 +1378,14 @@ footer {
       width: 100%;
     }
 
+    .emw-dialog {
+      width: 100%;
+      left: 0;
+      margin-left: 0;
+      padding: 30px 10px;
+    }
+  
+    .emwd-change-cover {
+      margin-left: 185px;
+    }
 }

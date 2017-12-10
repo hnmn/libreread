@@ -285,6 +285,7 @@
 * {
   padding: 0;
   margin: 0;
+  box-sizing: border-box;
 }
 
 html {
@@ -2448,11 +2449,30 @@ input[type="submit"] {
   }
 
   /* Custom styles */
+  
   .pdfjs-delete-book-icon {
     display: block;
   }
+
   .pdfjs-delete-book {
     display: none;
   }
+
+  #toolbarViewerRight {
+    background: #666666;
+    padding-left: 8px;
+  }
+
+  .emw-dialog {
+    width: 100%;
+    left: 0;
+    margin-left: 0;
+    padding: 30px 10px;
+  }
+
+  .emwd-change-cover {
+    margin-left: 185px;
+  }
+  
   /* End custom styles */
 }
