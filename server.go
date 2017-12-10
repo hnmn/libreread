@@ -249,9 +249,9 @@ func main() {
 	env := &Env{db: db, RedisClient: client}
 	// Router
 	r.GET("/", env.GetHomePage)
-	r.GET("/signin", GetSignIn)
+	r.GET("/signin", env.GetSignIn)
 	r.POST("/signin", env.PostSignIn)
-	r.GET("/signup", GetSignUp)
+	r.GET("/signup", env.GetSignUp)
 	r.POST("/signup", env.PostSignUp)
 	r.GET("/confirm-email", env.ConfirmEmail)
 	r.GET("/new-token", env.SendNewToken)
@@ -1222,12 +1222,32 @@ func (e *Env) GetPagination(c *gin.Context) {
 	c.Redirect(302, "/signin")
 }
 
-func GetSignIn(c *gin.Context) {
+func (e *Env) GetSignIn(c *gin.Context) {
 	email := _GetEmailFromSession(c)
 	if email != nil {
 		c.Redirect(302, "/")
 	}
-	c.HTML(302, "signin.html", "")
+
+	rows, err := e.db.Query("select email from user where id = ?", 1)
+	CheckError(err)
+
+	defer rows.Close()
+	var cEmail string
+	if rows.Next() {
+		err := rows.Scan(&cEmail)
+		CheckError(err)
+	}
+	fmt.Println(cEmail)
+
+	if cEmail != "" {
+		c.HTML(302, "signin.html", gin.H{
+			"enableSignUp": false,
+		})
+	} else {
+		c.HTML(302, "signin.html", gin.H{
+			"enableSignUp": true,
+		})
+	}
 }
 
 func GetSignOut(c *gin.Context) {
@@ -1280,8 +1300,23 @@ func (e *Env) PostSignIn(c *gin.Context) {
 	}
 }
 
-func GetSignUp(c *gin.Context) {
-	c.HTML(302, "signup.html", "")
+func (e *Env) GetSignUp(c *gin.Context) {
+	var email string
+	rows, err := e.db.Query("select email from user where id = ?", 1)
+	CheckError(err)
+
+	defer rows.Close()
+	if rows.Next() {
+		err := rows.Scan(&email)
+		CheckError(err)
+	}
+	fmt.Println(email)
+
+	if email != "" {
+		c.Redirect(302, "/signin")
+	} else {
+		c.HTML(302, "signup.html", "")
+	}
 }
 
 func (e *Env) PostSignUp(c *gin.Context) {
