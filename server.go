@@ -279,6 +279,7 @@ func main() {
 	r.POST("/delete-pdf-highlight", env.DeletePDFHighlight)
 	r.POST("/save-epub-highlight", env.SaveEPUBHighlight)
 	r.GET("/settings", env.GetSettings)
+	r.POST("/post-settings", env.PostSettings)
 
 	// Listen and serve on 0.0.0.0:8080
 	r.Run(":8080")
@@ -2789,6 +2790,43 @@ func (e *Env) GetSettings(c *gin.Context) {
 		c.HTML(302, "settings.html", gin.H{
 			"email": email.(string),
 		})
+	} else {
+		c.Redirect(302, "/signin")
+	}
+}
+
+type PostSettingsStruct struct {
+	Email          string `json:"email"`
+	ChangePassword bool   `json:"change_password"`
+	Password       string `json:"password"`
+}
+
+func (e *Env) PostSettings(c *gin.Context) {
+	email := _GetEmailFromSession(c)
+	if email != nil {
+		postSettings := PostSettingsStruct{}
+		err := c.BindJSON(&postSettings)
+		CheckError(err)
+
+		if postSettings.ChangePassword == true {
+			// Hashing the password with the default cost of 10
+			hashedPassword, err := bcrypt.GenerateFromPassword([]byte(postSettings.Password), bcrypt.DefaultCost)
+			CheckError(err)
+
+			stmt, err := e.db.Prepare("UPDATE `user` SET email=?, password_hash=? WHERE email=?")
+			CheckError(err)
+
+			_, err = stmt.Exec(postSettings.Email, hashedPassword, email.(string))
+			CheckError(err)
+		} else {
+			stmt, err := e.db.Prepare("UPDATE `user` SET email=? WHERE email=?")
+			CheckError(err)
+
+			_, err = stmt.Exec(postSettings.Email, email.(string))
+			CheckError(err)
+		}
+
+		c.String(200, "Successfully updated your settings.")
 	} else {
 		c.Redirect(302, "/signin")
 	}

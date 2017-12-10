@@ -327,7 +327,31 @@ $(function() {
 
 	$('.submit-settings').click(function(e) {
 		e.preventDefault()
-		alert('yes')
+		var email = $('#sEmail').val()
+		var data = {}
+		if ($('#changePassword').is(':checked')) {
+			data = {
+				'email': email,
+				'change_password': true,
+				'password': $('#sPassword').val()
+			}
+		} else {
+			data = {
+				'email': email,
+				'change_password': false
+			}
+		}
+
+		$.ajax({
+			url: '/post-settings',
+			type: 'POST',
+			data: JSON.stringify(data),
+			contentType: 'application/json; charset=utf-8',
+            success: function (data) {
+				alert(data)
+				window.location.href = '/signout'
+            }
+		})
 	})
 
 	$(document).click(function(e) {
