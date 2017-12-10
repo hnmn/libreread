@@ -1133,11 +1133,11 @@ footer {
       height: 108px;
     }
 
-    .epub-body header, .s-bg header {
+    .epub-body header, .s-bg header, .s-confirm header {
       height: 60px;
     }
 
-    .s-bg .header-nav {
+    .s-bg .header-nav, .s-confirm .header-nav {
       display: block;
     }
 
