@@ -2839,29 +2839,33 @@ type PostSettingsStruct struct {
 func (e *Env) PostSettings(c *gin.Context) {
 	email := _GetEmailFromSession(c)
 	if email != nil {
-		postSettings := PostSettingsStruct{}
-		err := c.BindJSON(&postSettings)
-		CheckError(err)
-
-		if postSettings.ChangePassword == true {
-			// Hashing the password with the default cost of 10
-			hashedPassword, err := bcrypt.GenerateFromPassword([]byte(postSettings.Password), bcrypt.DefaultCost)
-			CheckError(err)
-
-			stmt, err := e.db.Prepare("UPDATE `user` SET email=?, password_hash=? WHERE email=?")
-			CheckError(err)
-
-			_, err = stmt.Exec(postSettings.Email, hashedPassword, email.(string))
-			CheckError(err)
+		if os.Getenv("LIBREREAD_DEMO_SERVER") == string(1) {
+			c.String(200, "You can't change settings in the demo server ;)")
 		} else {
-			stmt, err := e.db.Prepare("UPDATE `user` SET email=? WHERE email=?")
+			postSettings := PostSettingsStruct{}
+			err := c.BindJSON(&postSettings)
 			CheckError(err)
 
-			_, err = stmt.Exec(postSettings.Email, email.(string))
-			CheckError(err)
+			if postSettings.ChangePassword == true {
+				// Hashing the password with the default cost of 10
+				hashedPassword, err := bcrypt.GenerateFromPassword([]byte(postSettings.Password), bcrypt.DefaultCost)
+				CheckError(err)
+
+				stmt, err := e.db.Prepare("UPDATE `user` SET email=?, password_hash=? WHERE email=?")
+				CheckError(err)
+
+				_, err = stmt.Exec(postSettings.Email, hashedPassword, email.(string))
+				CheckError(err)
+			} else {
+				stmt, err := e.db.Prepare("UPDATE `user` SET email=? WHERE email=?")
+				CheckError(err)
+
+				_, err = stmt.Exec(postSettings.Email, email.(string))
+				CheckError(err)
+			}
+
+			c.String(200, "Successfully updated your settings.")
 		}
-
-		c.String(200, "Successfully updated your settings.")
 	} else {
 		c.Redirect(302, "/signin")
 	}
