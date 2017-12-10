@@ -1329,7 +1329,7 @@ func (e *Env) _FillConfirmTable(token string, dateGenerated string, dateExpires 
 }
 
 func _SendEmail(token string, email string, name string) {
-	confirmEmailLink := "http://localhost:8080/confirm-email?token=" + token
+	confirmEmailLink := os.Getenv("LIBREREAD_DOMAIN_ADDRESS") + "/confirm-email?token=" + token
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", os.Getenv("LIBREREAD_SMTP_ADDRESS"))
