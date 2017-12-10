@@ -1133,8 +1133,12 @@ footer {
       height: 108px;
     }
 
-    .epub-body header {
+    .epub-body header, .s-bg header {
       height: 60px;
+    }
+
+    .s-bg .header-nav {
+      display: block;
     }
 
     .nav-up {
