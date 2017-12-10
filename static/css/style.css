@@ -1201,7 +1201,16 @@ footer {
 
   	.bc-books-list-medium {
       display: block;
-  	}
+    }
+    
+    .collections-list {
+      width: 315px;
+    }
+
+    .collections-list a {
+      display: block;
+      float: none;
+    }
 }
 
 @media screen
@@ -1357,6 +1366,16 @@ footer {
 
     .bc-books-list-xtra-small {
       display: block;
+    }
+
+    .collections-list, .collections-list a, 
+    .collections-list a::after,
+    .books-container .info, 
+    .add-collection-container, 
+    .add-collection-container input[type="text"], 
+    .add-collection-container textarea, 
+    .add-collection-container .add-books {
+      width: 100%;
     }
 
 }
