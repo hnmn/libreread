@@ -251,6 +251,7 @@ func main() {
 	r.GET("/", env.GetHomePage)
 	r.GET("/signin", env.GetSignIn)
 	r.POST("/signin", env.PostSignIn)
+	r.GET("/forgot-password", GetForgotPassword)
 	r.GET("/signup", env.GetSignUp)
 	r.POST("/signup", env.PostSignUp)
 	r.GET("/confirm-email", env.ConfirmEmail)
@@ -1303,6 +1304,10 @@ func (e *Env) PostSignIn(c *gin.Context) {
 	} else {
 		c.HTML(302, "signin.html", "")
 	}
+}
+
+func GetForgotPassword(c *gin.Context) {
+	c.HTML(302, "forgot_password.html", "")
 }
 
 func (e *Env) GetSignUp(c *gin.Context) {

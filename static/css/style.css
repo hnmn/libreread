@@ -500,14 +500,14 @@ header .header-container {
   background: white;
 }
 
-.sign-form label {
+.sign-form label, .forgot-form label {
 	display: block;
   font-weight: 700;
   text-align: center;
   margin-top: 30px;
 }
 
-.sign-form input[type="text"], .sign-form input[type="password"] {
+.sign-form input[type="text"], .sign-form input[type="email"], .sign-form input[type="password"], .forgot-form input[type="email"] {
   display: block;
 	width: 240px;
   height: 34px;
@@ -518,7 +518,7 @@ header .header-container {
 	margin: 20px auto 0;
 }
 
-.sign-form input[type="text"]:focus, .sign-form input[type="password"]:focus {
+.sign-form input[type="text"]:focus, .sign-form input[type="email"]:focus, .sign-form input[type="password"]:focus, .forgot-form input[type="email"]:focus {
 	border: 1px solid #FF4848;
 }
 
