@@ -252,6 +252,7 @@ func main() {
 	r.GET("/signin", env.GetSignIn)
 	r.POST("/signin", env.PostSignIn)
 	r.GET("/forgot-password", GetForgotPassword)
+	r.POST("/forgot-password", env.PostForgotPassword)
 	r.GET("/signup", env.GetSignUp)
 	r.POST("/signup", env.PostSignUp)
 	r.GET("/confirm-email", env.ConfirmEmail)
@@ -1310,6 +1311,41 @@ func GetForgotPassword(c *gin.Context) {
 	c.HTML(302, "forgot_password.html", "")
 }
 
+func (e *Env) PostForgotPassword(c *gin.Context) {
+	email := c.PostForm("email")
+	rows, err := e.db.Query("select id, name from user where email = ?", email)
+	CheckError(err)
+
+	var (
+		userID int64
+		name   string
+	)
+	defer rows.Close()
+	if rows.Next() {
+		err := rows.Scan(&userID, &name)
+		CheckError(err)
+	}
+
+	if userID != 0 {
+		token := RandSeq(40)
+		resetPasswordLink := os.Getenv("LIBREREAD_DOMAIN_ADDRESS") + "/reset-password?token=" + token
+		subject := "LibreRead: Reset your password"
+		message := "Hi " + name +
+			",<br><br>Please reset your password by clicking this link<br>" +
+			resetPasswordLink
+
+		go _SendEmail(email, name, subject, message)
+
+		c.HTML(302, "forgot_message.html", gin.H{
+			"message": "Reset password link has been sent to your email address.",
+		})
+	} else {
+		c.HTML(302, "forgot_message.html", gin.H{
+			"message": "No email address registered in that name.",
+		})
+	}
+}
+
 func (e *Env) GetSignUp(c *gin.Context) {
 	var email string
 	rows, err := e.db.Query("select email from user where id = ?", 1)
@@ -1373,16 +1409,16 @@ func (e *Env) _FillConfirmTable(token string, dateGenerated string, dateExpires 
 	CheckError(err)
 }
 
-func _SendEmail(token string, email string, name string) {
-	confirmEmailLink := os.Getenv("LIBREREAD_DOMAIN_ADDRESS") + "/confirm-email?token=" + token
+func _SendEmail(email string, name string, subject string, message string) {
+	// Set home many CPU cores this function wants to use
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	fmt.Println(runtime.NumCPU())
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", os.Getenv("LIBREREAD_SMTP_ADDRESS"))
 	m.SetHeader("To", email)
-	m.SetHeader("Subject", "LibreRead Email Confirmation")
-	m.SetBody("text/html", "Hi "+name+
-		",<br><br>Please confirm your email by clicking this link<br>"+
-		confirmEmailLink)
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", message)
 
 	smtp_server := os.Getenv("LIBREREAD_SMTP_SERVER")
 	smtp_port, err := strconv.Atoi(os.Getenv("LIBREREAD_SMTP_PORT"))
@@ -1394,6 +1430,7 @@ func _SendEmail(token string, email string, name string) {
 
 	// Send the confirmation email
 	if err := d.DialAndSend(m); err != nil {
+		fmt.Println("Email Error:")
 		fmt.Println(err)
 	}
 }
@@ -1414,7 +1451,15 @@ func (e *Env) _SendConfirmationEmail(userId int64, name string, email string) {
 
 	e._FillConfirmTable(token, dateGenerated, dateExpires, userId)
 
-	_SendEmail(token, email, name)
+	confirmEmailLink := os.Getenv("LIBREREAD_DOMAIN_ADDRESS") + "/confirm-email?token=" + token
+
+	message := "Hi " + name +
+		",<br><br>Please confirm your email by clicking this link<br>" +
+		confirmEmailLink
+
+	subject := "LibreRead Email Confirmation"
+
+	_SendEmail(email, name, subject, message)
 }
 
 func (e *Env) _GetConfirmTableRecord(token string, c *gin.Context) (int64, string, int64) {
