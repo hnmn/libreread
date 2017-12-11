@@ -54,7 +54,8 @@ along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.
 			<input type="email" name="email" placeholder="Email">
 			<input type="password" name="password" placeholder="Password">
 			<input type="submit" value="Submit">
-			{{ if not .demoLabel }}
+			{{ if .demoLabel }}
+			{{ else }}
 				<a href="/forgot-password" class="forget-password">Forgot password</a>
 			{{ end }}
 		</form>
@@ -79,6 +80,6 @@ along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.
   		src="https://code.jquery.com/jquery-3.2.1.min.js"
   		integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
   		crossorigin="anonymous"></script>
-  	<script src="/static/js/main.js" type="text/javascript"></script>
+	  <script src="/static/js/main.js" type="text/javascript"></script>
 </body>
 </html>
