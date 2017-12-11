@@ -1352,7 +1352,7 @@ footer {
       width: 100%;
     }
 
-    .sign-form input[type="text"], .sign-form input[type="password"] {
+    .sign-form input[type="text"], .sign-form input[type="email"], .sign-form input[type="password"] {
       width: 80%;
     }
 
