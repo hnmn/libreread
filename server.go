@@ -84,7 +84,8 @@ func main() {
 	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS `user` " +
 		"(`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` VARCHAR(255) NOT NULL," +
 		" `email` VARCHAR(255) UNIQUE NOT NULL, `password_hash` VARCHAR(255) NOT NULL," +
-		" `confirmed` INTEGER DEFAULT 0, `full_text_search` INTEGER DEFAULT 0)")
+		" `confirmed` INTEGER DEFAULT 0, `full_text_search` INTEGER DEFAULT 0," +
+		" `forgot_password_token` VARCHAR(255))")
 	CheckError(err)
 
 	_, err = stmt.Exec()
@@ -97,7 +98,7 @@ func main() {
 	// -----------------------------------------------------------------------------------------------------------
 	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS `confirm` (`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
 		" `token` VARCHAR(255) NOT NULL, `date_generated` VARCHAR(255) NOT NULL," +
-		" `date_expires` VARCHAR(255) NOT NULL, `date_used` VARCHAR(255), " +
+		" `date_expires` VARCHAR(255) NOT NULL, `date_used` VARCHAR(255)," +
 		" `used` INTEGER DEFAULT 0, `user_id` INTEGER NOT NULL)")
 	CheckError(err)
 
@@ -253,6 +254,8 @@ func main() {
 	r.POST("/signin", env.PostSignIn)
 	r.GET("/forgot-password", GetForgotPassword)
 	r.POST("/forgot-password", env.PostForgotPassword)
+	r.GET("/reset-password", env.GetResetPassword)
+	r.POST("/reset-password", env.PostResetPassword)
 	r.GET("/signup", env.GetSignUp)
 	r.POST("/signup", env.PostSignUp)
 	r.GET("/confirm-email", env.ConfirmEmail)
@@ -1320,14 +1323,21 @@ func (e *Env) PostForgotPassword(c *gin.Context) {
 		userID int64
 		name   string
 	)
-	defer rows.Close()
 	if rows.Next() {
 		err := rows.Scan(&userID, &name)
 		CheckError(err)
 	}
+	rows.Close()
 
 	if userID != 0 {
 		token := RandSeq(40)
+
+		stmt, err := e.db.Prepare("update user set forgot_password_token=? where id=?")
+		CheckError(err)
+
+		_, err = stmt.Exec(token, userID)
+		CheckError(err)
+
 		resetPasswordLink := os.Getenv("LIBREREAD_DOMAIN_ADDRESS") + "/reset-password?token=" + token
 		subject := "LibreRead: Reset your password"
 		message := "Hi " + name +
@@ -1344,6 +1354,50 @@ func (e *Env) PostForgotPassword(c *gin.Context) {
 			"message": "No email address registered in that name.",
 		})
 	}
+}
+
+func (e *Env) GetResetPassword(c *gin.Context) {
+	token := c.Request.URL.Query()["token"][0]
+	fmt.Println(token)
+	rows, err := e.db.Query("select email from user where forgot_password_token = ?", token)
+	CheckError(err)
+
+	var email string
+	defer rows.Close()
+	if rows.Next() {
+		err := rows.Scan(&email)
+		CheckError(err)
+	}
+	fmt.Println(email)
+
+	if email != "" {
+		c.HTML(200, "reset_password.html", gin.H{
+			"email": email,
+		})
+	} else {
+		c.HTML(200, "forgot_message.html", gin.H{
+			"message": "Your reset password link is invalid.",
+		})
+	}
+}
+
+func (e *Env) PostResetPassword(c *gin.Context) {
+	email := c.PostForm("email")
+	password := []byte(c.PostForm("password"))
+
+	// Hashing the password with the default cost of 10
+	hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
+	CheckError(err)
+
+	stmt, err := e.db.Prepare("update user set password_hash=?, forgot_password_token=? where email=?")
+	CheckError(err)
+
+	_, err = stmt.Exec(hashedPassword, "", email)
+	CheckError(err)
+
+	c.HTML(200, "forgot_message.html", gin.H{
+		"message": "Your password has been successfully changed.",
+	})
 }
 
 func (e *Env) GetSignUp(c *gin.Context) {
