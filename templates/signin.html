@@ -54,8 +54,7 @@ along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.
 			<input type="email" name="email" placeholder="Email">
 			<input type="password" name="password" placeholder="Password">
 			<input type="submit" value="Submit">
-			{{ if .demoLabel }}
-			{{ else }}
+			{{ if not .demoLabel }}
 				<a href="/forgot-password" class="forget-password">Forgot password</a>
 			{{ end }}
 		</form>
