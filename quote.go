@@ -23,7 +23,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func StartQuote() {
+func main() {
 	r := gin.Default()
 
 	// Router
