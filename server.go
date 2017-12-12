@@ -53,6 +53,11 @@ type Env struct {
 	RedisClient *redis.Client
 }
 
+const (
+	DEFAULT_PORT = 8080
+	PORT_ENV = "LIBREREAD_PORT"
+)
+
 var ES_PATH = os.Getenv("ES_PATH")
 
 func main() {
@@ -287,7 +292,15 @@ func main() {
 	r.POST("/post-settings", env.PostSettings)
 
 	// Listen and serve on 0.0.0.0:8080
-	r.Run(":8080")
+	port := DEFAULT_PORT
+	if override := os.Getenv(PORT_ENV); override != "" {
+		port, err = strconv.Atoi(override)
+		if err != nil {
+			fmt.Println("Invalid port specified")
+			os.Exit(1)
+		}
+	}
+	r.Run(fmt.Sprintf(":%d", port))
 }
 
 func CheckError(err error) {
