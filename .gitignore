@@ -2,7 +2,5 @@ libreread.db
 uploads
 *.DS_Store
 *.js.map
-server
-quote
 dump.rdb
 lr_index.bleve

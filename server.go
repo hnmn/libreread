@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package main
+package libreread
 
 import (
 	"bytes"
@@ -55,7 +55,7 @@ type Env struct {
 
 var ES_PATH = os.Getenv("ES_PATH")
 
-func main() {
+func StartServer() {
 	r := gin.Default()
 
 	// Initiate session management (cookie-based)
