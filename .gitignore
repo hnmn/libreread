@@ -4,5 +4,3 @@ uploads
 *.js.map
 dump.rdb
 lr_index.bleve
-server
-quote
