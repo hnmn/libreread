@@ -55,7 +55,7 @@ type Env struct {
 
 var ES_PATH = os.Getenv("ES_PATH")
 
-func main() {
+func StartServer() {
 	r := gin.Default()
 
 	// Initiate session management (cookie-based)

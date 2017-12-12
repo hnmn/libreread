@@ -17,13 +17,13 @@ You should have received a copy of the GNU General Public License
 along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package libreread
+package quote
 
 import (
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
+func StartQuote() {
 	r := gin.Default()
 
 	// Router
