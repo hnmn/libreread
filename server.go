@@ -55,7 +55,7 @@ type Env struct {
 
 const (
 	DEFAULT_PORT = 8080
-	PORT_ENV = "LIBREREAD_PORT"
+	PORT_ENV     = "LIBREREAD_PORT"
 )
 
 var ES_PATH = os.Getenv("ES_PATH")
@@ -708,81 +708,85 @@ func DeleteHTTPRequest(url string) {
 }
 
 func (e *Env) DeleteBook(c *gin.Context) {
-	email := _GetEmailFromSession(c)
-	if email != nil {
-		userId := e._GetUserId(email.(string))
+	if os.Getenv("LIBREREAD_DEMO_SERVER") == "1" {
+		c.String(200, "Deleting book is disabled in the demo server.")
+	} else {
+		email := _GetEmailFromSession(c)
+		if email != nil {
+			userId := e._GetUserId(email.(string))
 
-		fileName := c.Param("bookname")
-		fmt.Println(fileName)
+			fileName := c.Param("bookname")
+			fmt.Println(fileName)
 
-		var bookId int64
-		var title, author, cover, url string
-		rows, err := e.db.Query("select id, title, author, cover, url from book where filename=?", fileName)
-		CheckError(err)
-
-		for rows.Next() {
-			err = rows.Scan(&bookId, &title, &author, &cover, &url)
-			CheckError(err)
-		}
-		rows.Close()
-
-		stmt, err := e.db.Prepare("delete from book where filename=?")
-		CheckError(err)
-
-		_, err = stmt.Exec(fileName)
-		CheckError(err)
-
-		currentlyReadingId := e._CheckCurrentlyReading(bookId)
-
-		if currentlyReadingId != 0 {
-			stmt, err := e.db.Prepare("delete from currently_reading where book_id=?")
+			var bookId int64
+			var title, author, cover, url string
+			rows, err := e.db.Query("select id, title, author, cover, url from book where filename=?", fileName)
 			CheckError(err)
 
-			_, err = stmt.Exec(currentlyReadingId)
-			CheckError(err)
-		}
+			for rows.Next() {
+				err = rows.Scan(&bookId, &title, &author, &cover, &url)
+				CheckError(err)
+			}
+			rows.Close()
 
-		rows, err = e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
-		CheckError(err)
-
-		var fts int64
-		if rows.Next() {
-			err := rows.Scan(&fts)
-			CheckError(err)
-		}
-		rows.Close()
-
-		if fts == 0 {
-			index, _ := bleve.Open("lr_index.bleve")
-			indexId := strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****"
-			err = index.Delete(indexId)
+			stmt, err := e.db.Prepare("delete from book where filename=?")
 			CheckError(err)
 
-			err = index.Close()
-			CheckError(err)
-		} else {
-			indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
-			fmt.Println(indexURL)
-
-			DeleteHTTPRequest(indexURL)
-
-			val, err := e.RedisClient.Get(fileName + "...total_pages...").Result()
+			_, err = stmt.Exec(fileName)
 			CheckError(err)
 
-			totalPages, err := strconv.ParseInt(val, 10, 64)
+			currentlyReadingId := e._CheckCurrentlyReading(bookId)
+
+			if currentlyReadingId != 0 {
+				stmt, err := e.db.Prepare("delete from currently_reading where book_id=?")
+				CheckError(err)
+
+				_, err = stmt.Exec(currentlyReadingId)
+				CheckError(err)
+			}
+
+			rows, err = e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
 			CheckError(err)
 
-			for i := 0; i <= int(totalPages); i++ {
-				indexURL := ES_PATH + "lr_index/book_detail/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "_" + strconv.Itoa(i)
+			var fts int64
+			if rows.Next() {
+				err := rows.Scan(&fts)
+				CheckError(err)
+			}
+			rows.Close()
+
+			if fts == 0 {
+				index, _ := bleve.Open("lr_index.bleve")
+				indexId := strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****"
+				err = index.Delete(indexId)
+				CheckError(err)
+
+				err = index.Close()
+				CheckError(err)
+			} else {
+				indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
 				fmt.Println(indexURL)
 
 				DeleteHTTPRequest(indexURL)
-			}
-		}
 
-		c.Redirect(302, "/")
+				val, err := e.RedisClient.Get(fileName + "...total_pages...").Result()
+				CheckError(err)
+
+				totalPages, err := strconv.ParseInt(val, 10, 64)
+				CheckError(err)
+
+				for i := 0; i <= int(totalPages); i++ {
+					indexURL := ES_PATH + "lr_index/book_detail/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "_" + strconv.Itoa(i)
+					fmt.Println(indexURL)
+
+					DeleteHTTPRequest(indexURL)
+				}
+			}
+
+			c.Redirect(302, "/")
+		}
+		c.Redirect(302, "/signin")
 	}
-	c.Redirect(302, "/signin")
 }
 
 type CurrentPageDataStruct struct {
@@ -1989,234 +1993,238 @@ func (opfMetadata *OPFMetadataStruct) _FeedEPUBContent(packagePath string, title
 }
 
 func (e *Env) UploadBook(c *gin.Context) {
-	email := _GetEmailFromSession(c)
-	if email != nil {
-		userId := e._GetUserId(email.(string))
+	if os.Getenv("LIBREREAD_DEMO_SERVER") == "1" {
+		c.String(200, "Upload is disabled in the demo server.")
+	} else {
+		email := _GetEmailFromSession(c)
+		if email != nil {
+			userId := e._GetUserId(email.(string))
 
-		rows, err := e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
-		CheckError(err)
-
-		var fts int64
-		if rows.Next() {
-			err := rows.Scan(&fts)
+			rows, err := e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
 			CheckError(err)
-		}
-		rows.Close()
 
-		multipart, err := c.Request.MultipartReader()
-		CheckError(err)
-
-		for {
-			mimePart, err := multipart.NextPart()
-
-			if err == io.EOF {
-				break
+			var fts int64
+			if rows.Next() {
+				err := rows.Scan(&fts)
+				CheckError(err)
 			}
+			rows.Close()
 
-			// Get filename and content type
-			_, params, err := mime.ParseMediaType(mimePart.Header.Get("Content-Disposition"))
-			CheckError(err)
-			contentType, _, err := mime.ParseMediaType(mimePart.Header.Get("Content-Type"))
+			multipart, err := c.Request.MultipartReader()
 			CheckError(err)
 
-			// Construct filename for the book uploaded
-			fileName := _ConstructFileNameForBook(params["filename"], contentType)
+			for {
+				mimePart, err := multipart.NextPart()
 
-			bookId, _, _ := e._GetBookInfo(fileName)
-
-			if bookId != 0 {
-				c.String(200, fileName+" already exists. ")
-				continue
-			}
-
-			uploadedOn := _GetCurrentTime()
-
-			filePath := "./uploads/" + fileName
-
-			out, err := os.Create(filePath)
-			CheckError(err)
-
-			_, err = io.Copy(out, mimePart)
-			CheckError(err)
-
-			out.Close()
-
-			if contentType == "application/pdf" {
-
-				title, author, pages := _GetPDFInfo(filePath)
-
-				if title == "" {
-					title = fileName
+				if err == io.EOF {
+					break
 				}
 
-				if author == "" {
-					author = "unknown"
+				// Get filename and content type
+				_, params, err := mime.ParseMediaType(mimePart.Header.Get("Content-Disposition"))
+				CheckError(err)
+				contentType, _, err := mime.ParseMediaType(mimePart.Header.Get("Content-Type"))
+				CheckError(err)
+
+				// Construct filename for the book uploaded
+				fileName := _ConstructFileNameForBook(params["filename"], contentType)
+
+				bookId, _, _ := e._GetBookInfo(fileName)
+
+				if bookId != 0 {
+					c.String(200, fileName+" already exists. ")
+					continue
 				}
 
-				fmt.Println("Book title: " + title)
-				fmt.Println("Book author: " + author)
-				fmt.Println("Total pages: " + pages)
+				uploadedOn := _GetCurrentTime()
 
-				pagesInt, err := strconv.ParseInt(pages, 10, 64)
+				filePath := "./uploads/" + fileName
+
+				out, err := os.Create(filePath)
 				CheckError(err)
 
-				err = e.RedisClient.Set(fileName+"...total_pages...", pagesInt, 0).Err()
+				_, err = io.Copy(out, mimePart)
 				CheckError(err)
 
-				url := "/book/" + fileName
-				fmt.Println("Book URL: " + url)
+				out.Close()
 
-				coverPath := "./uploads/img/" + fileName
+				if contentType == "application/pdf" {
 
-				cover := _GeneratePDFCover(fileName, filePath, coverPath)
+					title, author, pages := _GetPDFInfo(filePath)
 
-				fmt.Println("Book cover: " + cover)
-
-				// Insert new book in `book` table
-				bookId := e._InsertBookRecord(title, fileName, filePath, author, url, cover, pagesInt, "pdf", uploadedOn, userId)
-				fmt.Println(bookId)
-
-				if fts == 0 {
-					index, err := bleve.Open("lr_index.bleve")
-					CheckError(err)
-
-					message := struct {
-						Id     string
-						Title  string
-						Author string
-					}{
-						Id:     strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****",
-						Title:  title,
-						Author: author,
+					if title == "" {
+						title = fileName
 					}
 
-					index.Index(message.Id, message)
-					err = index.Close()
-					CheckError(err)
-				} else {
-					// Feed book info to ES
-					bookInfo := BookInfoStruct{
-						Title:  title,
-						Author: author,
-						URL:    url,
-						Cover:  cover,
+					if author == "" {
+						author = "unknown"
 					}
 
-					fmt.Println(bookInfo)
+					fmt.Println("Book title: " + title)
+					fmt.Println("Book author: " + author)
+					fmt.Println("Total pages: " + pages)
 
-					indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
-					fmt.Println(indexURL)
-
-					b, err := json.Marshal(bookInfo)
+					pagesInt, err := strconv.ParseInt(pages, 10, 64)
 					CheckError(err)
 
-					PutJSON(indexURL, b)
-
-					// Feed book content to ES
-					go FeedPDFContent(filePath, userId, bookId, title, author, url, cover, pagesInt)
-				}
-
-				c.String(200, fileName+" uploaded successfully. ")
-
-			} else if contentType == "application/epub+zip" {
-				// Unzip epub in the /uploads directory
-				epubUnzipPath := _EPUBUnzip(filePath, fileName)
-				containerXMLPath := epubUnzipPath + "/META-INF/container.xml"
-
-				// Fetch rootfile and OPF file path
-				rootFilePath, opfFilePath := _FetchOPFFilePath(epubUnzipPath, containerXMLPath)
-
-				packagePath := epubUnzipPath
-				rootFilePathSplit := strings.Split(rootFilePath, "/")
-				if len(rootFilePathSplit) > 1 {
-					packagePath = epubUnzipPath + "/" + rootFilePathSplit[0]
-				}
-
-				// Convert opf file to xml
-				opfXMLPath := _ConvertOpfToXml(opfFilePath)
-
-				opfMetadata := OPFMetadataStruct{}
-				opfMetadata._FetchEPUBMetadata(opfXMLPath)
-
-				title := opfMetadata.Metadata.Title
-				author := opfMetadata.Metadata.Author
-				cover := opfMetadata._FetchEPUBCover(packagePath, opfFilePath)
-
-				fmt.Println("Book title: " + title)
-				fmt.Println("Book author: " + author)
-
-				// Store opfMetadata in Redis
-				opfJSON, err := json.Marshal(opfMetadata)
-				CheckError(err)
-
-				err = e.RedisClient.Set(fileName, string(opfJSON), 0).Err()
-				CheckError(err)
-
-				totalPages := len(opfMetadata.Spine.ItemRef.IdRef)
-				err = e.RedisClient.Set(fileName+"...total_pages...", totalPages, 0).Err()
-				CheckError(err)
-
-				err = e.RedisClient.Set(fileName+"...current_page...", 1, 0).Err()
-				CheckError(err)
-
-				err = e.RedisClient.Set(fileName+"...current_fragment...", 0, 0).Err()
-				CheckError(err)
-
-				// Remove dot from ./uploads
-				packagePathSplit := strings.Split(packagePath, "./uploads")
-				redisPackagePath := "/uploads" + packagePathSplit[1]
-
-				err = e.RedisClient.Set(fileName+"...filepath...", redisPackagePath, 0).Err()
-				CheckError(err)
-
-				url := "/book/" + fileName
-
-				// Insert new book in `book` table
-				bookId := e._InsertBookRecord(title, fileName, packagePath, author, url, cover, 1, "epub", uploadedOn, userId)
-				fmt.Println(bookId)
-
-				if fts == 0 {
-					index, err := bleve.Open("lr_index.bleve")
+					err = e.RedisClient.Set(fileName+"...total_pages...", pagesInt, 0).Err()
 					CheckError(err)
 
-					message := struct {
-						Id     string
-						Title  string
-						Author string
-					}{
-						Id:     strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****",
-						Title:  title,
-						Author: author,
+					url := "/book/" + fileName
+					fmt.Println("Book URL: " + url)
+
+					coverPath := "./uploads/img/" + fileName
+
+					cover := _GeneratePDFCover(fileName, filePath, coverPath)
+
+					fmt.Println("Book cover: " + cover)
+
+					// Insert new book in `book` table
+					bookId := e._InsertBookRecord(title, fileName, filePath, author, url, cover, pagesInt, "pdf", uploadedOn, userId)
+					fmt.Println(bookId)
+
+					if fts == 0 {
+						index, err := bleve.Open("lr_index.bleve")
+						CheckError(err)
+
+						message := struct {
+							Id     string
+							Title  string
+							Author string
+						}{
+							Id:     strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****",
+							Title:  title,
+							Author: author,
+						}
+
+						index.Index(message.Id, message)
+						err = index.Close()
+						CheckError(err)
+					} else {
+						// Feed book info to ES
+						bookInfo := BookInfoStruct{
+							Title:  title,
+							Author: author,
+							URL:    url,
+							Cover:  cover,
+						}
+
+						fmt.Println(bookInfo)
+
+						indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
+						fmt.Println(indexURL)
+
+						b, err := json.Marshal(bookInfo)
+						CheckError(err)
+
+						PutJSON(indexURL, b)
+
+						// Feed book content to ES
+						go FeedPDFContent(filePath, userId, bookId, title, author, url, cover, pagesInt)
 					}
 
-					index.Index(message.Id, message)
-					err = index.Close()
-					CheckError(err)
-				} else {
-					// Feed book info to ES
-					bookInfo := BookInfoStruct{
-						Title:  title,
-						Author: author,
-						URL:    url,
-						Cover:  cover,
+					c.String(200, fileName+" uploaded successfully. ")
+
+				} else if contentType == "application/epub+zip" {
+					// Unzip epub in the /uploads directory
+					epubUnzipPath := _EPUBUnzip(filePath, fileName)
+					containerXMLPath := epubUnzipPath + "/META-INF/container.xml"
+
+					// Fetch rootfile and OPF file path
+					rootFilePath, opfFilePath := _FetchOPFFilePath(epubUnzipPath, containerXMLPath)
+
+					packagePath := epubUnzipPath
+					rootFilePathSplit := strings.Split(rootFilePath, "/")
+					if len(rootFilePathSplit) > 1 {
+						packagePath = epubUnzipPath + "/" + rootFilePathSplit[0]
 					}
 
-					fmt.Println(bookInfo)
+					// Convert opf file to xml
+					opfXMLPath := _ConvertOpfToXml(opfFilePath)
 
-					// Feed book info to ES
-					indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
-					fmt.Println(indexURL)
+					opfMetadata := OPFMetadataStruct{}
+					opfMetadata._FetchEPUBMetadata(opfXMLPath)
 
-					b, err := json.Marshal(bookInfo)
+					title := opfMetadata.Metadata.Title
+					author := opfMetadata.Metadata.Author
+					cover := opfMetadata._FetchEPUBCover(packagePath, opfFilePath)
+
+					fmt.Println("Book title: " + title)
+					fmt.Println("Book author: " + author)
+
+					// Store opfMetadata in Redis
+					opfJSON, err := json.Marshal(opfMetadata)
 					CheckError(err)
 
-					PutJSON(indexURL, b)
+					err = e.RedisClient.Set(fileName, string(opfJSON), 0).Err()
+					CheckError(err)
 
-					// Feed book detail to ES
-					go opfMetadata._FeedEPUBContent(packagePath, title, author, cover, url, userId, bookId)
+					totalPages := len(opfMetadata.Spine.ItemRef.IdRef)
+					err = e.RedisClient.Set(fileName+"...total_pages...", totalPages, 0).Err()
+					CheckError(err)
+
+					err = e.RedisClient.Set(fileName+"...current_page...", 1, 0).Err()
+					CheckError(err)
+
+					err = e.RedisClient.Set(fileName+"...current_fragment...", 0, 0).Err()
+					CheckError(err)
+
+					// Remove dot from ./uploads
+					packagePathSplit := strings.Split(packagePath, "./uploads")
+					redisPackagePath := "/uploads" + packagePathSplit[1]
+
+					err = e.RedisClient.Set(fileName+"...filepath...", redisPackagePath, 0).Err()
+					CheckError(err)
+
+					url := "/book/" + fileName
+
+					// Insert new book in `book` table
+					bookId := e._InsertBookRecord(title, fileName, packagePath, author, url, cover, 1, "epub", uploadedOn, userId)
+					fmt.Println(bookId)
+
+					if fts == 0 {
+						index, err := bleve.Open("lr_index.bleve")
+						CheckError(err)
+
+						message := struct {
+							Id     string
+							Title  string
+							Author string
+						}{
+							Id:     strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****",
+							Title:  title,
+							Author: author,
+						}
+
+						index.Index(message.Id, message)
+						err = index.Close()
+						CheckError(err)
+					} else {
+						// Feed book info to ES
+						bookInfo := BookInfoStruct{
+							Title:  title,
+							Author: author,
+							URL:    url,
+							Cover:  cover,
+						}
+
+						fmt.Println(bookInfo)
+
+						// Feed book info to ES
+						indexURL := ES_PATH + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
+						fmt.Println(indexURL)
+
+						b, err := json.Marshal(bookInfo)
+						CheckError(err)
+
+						PutJSON(indexURL, b)
+
+						// Feed book detail to ES
+						go opfMetadata._FeedEPUBContent(packagePath, title, author, cover, url, userId, bookId)
+					}
+
+					c.String(200, fileName+" uploaded successfully. ")
 				}
-
-				c.String(200, fileName+" uploaded successfully. ")
 			}
 		}
 	}
