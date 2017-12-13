@@ -5,3 +5,5 @@ uploads
 dump.rdb
 lr_index.bleve
 out
+redis-data
+libreread-data

@@ -1,0 +1,16 @@
+---
+version: '2.2'
+services:
+  libreread:
+    build: .
+    environment:
+    - "LIBREREAD_REDIS_PATH=redis:6379"
+    ports:
+    - "8080:8080"
+    volumes:
+    - ./libreread-data:/libreread
+  redis:
+    image: redis
+    volumes:
+    - ./redis-data:/data
+...
