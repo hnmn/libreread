@@ -1247,7 +1247,7 @@ func (e *Env) GetPagination(c *gin.Context) {
 func (e *Env) GetSignIn(c *gin.Context) {
 	email := _GetEmailFromSession(c)
 	if email != nil {
-		c.Redirect(302, "/")
+		c.Redirect(200, "/")
 	}
 
 	rows, err := e.db.Query("select email from user where id = ?", 1)
@@ -1271,7 +1271,7 @@ func (e *Env) GetSignIn(c *gin.Context) {
 		demoLabel = true
 	}
 
-	c.HTML(302, "signin.html", gin.H{
+	c.HTML(200, "signin.html", gin.H{
 		"enableSignUp": enableSignUp,
 		"demoLabel":    demoLabel,
 	})
