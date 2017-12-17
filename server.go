@@ -248,6 +248,10 @@ func StartServer() {
 	// PutJSON(ES_PATH+"lr_index", b)
 
 	// Initiate redis
+	if REDIS_PATH == "" {
+		REDIS_PATH = "localhost:6379"
+	}
+
 	client := redis.NewClient(&redis.Options{
 		Addr:     REDIS_PATH,
 		Password: "", // no password set
