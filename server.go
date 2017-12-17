@@ -58,7 +58,10 @@ const (
 	PORT_ENV     = "LIBREREAD_PORT"
 )
 
-var ES_PATH = os.Getenv("ES_PATH")
+var (
+	ES_PATH    = os.Getenv("ES_PATH")
+	REDIS_PATH = os.Getenv("REDIS_PATH")
+)
 
 func StartServer() {
 	r := gin.Default()
@@ -246,7 +249,7 @@ func StartServer() {
 
 	// Initiate redis
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     REDIS_PATH,
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
