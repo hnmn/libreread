@@ -200,6 +200,12 @@ func StartServer() {
 		DB:       0,  // use default DB
 	})
 
+	// Create upload directory if not exist
+	uploadPath := "./uploads/img"
+	if _, err := os.Stat(uploadPath); os.IsNotExist(err) {
+		err = os.MkdirAll(uploadPath, 0777)
+	}
+
 	// Set database and redis environment
 	env := &Env{db: db, RedisClient: client}
 	// Router
