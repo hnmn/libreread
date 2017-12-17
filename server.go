@@ -190,12 +190,8 @@ func StartServer() {
 	}
 
 	// Initiate redis
-	if REDIS_PATH == "" {
-		REDIS_PATH = "localhost:6379"
-	}
-
 	client := redis.NewClient(&redis.Options{
-		Addr:     REDIS_PATH,
+		Addr:     _GetEnv(REDIS_PATH, "localhost:6379"),
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
@@ -262,6 +258,13 @@ func CheckError(err error) {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func _GetEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }
 
 var myClient = &http.Client{Timeout: 10 * time.Second}
