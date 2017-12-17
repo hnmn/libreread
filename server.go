@@ -189,64 +189,6 @@ func StartServer() {
 		CheckError(err)
 	}
 
-	// type Attachment struct {
-	// 	Field        string `json:"field"`
-	// 	IndexedChars int64  `json:"indexed_chars"`
-	// }
-
-	// type Processors struct {
-	// 	Attachment Attachment `json:"attachment"`
-	// }
-
-	// type AttachmentStruct struct {
-	// 	Description string       `json:"description"`
-	// 	Processors  []Processors `json:"processors"`
-	// }
-
-	// // Init Elasticsearch attachment
-	// attachment := &AttachmentStruct{
-	// 	Description: "Process documents",
-	// 	Processors: []Processors{
-	// 		Processors{
-	// 			Attachment: Attachment{
-	// 				Field:        "thedata",
-	// 				IndexedChars: -1,
-	// 			},
-	// 		},
-	// 	},
-	// }
-
-	// fmt.Println(attachment)
-
-	// b, err := json.Marshal(attachment)
-	// CheckError(err)
-	// fmt.Println(b)
-
-	// PutJSON(ES_PATH+"_ingest/pipeline/attachment", b)
-
-	// type Settings struct {
-	// 	NumberOfShards   int64 `json:"number_of_shards"`
-	// 	NumberOfReplicas int64 `json:"number_of_replicas"`
-	// }
-
-	// type IndexStruct struct {
-	// 	Settings Settings `json:"settings"`
-	// }
-
-	// // Init Elasticsearch index
-	// index := &IndexStruct{
-	// 	Settings{
-	// 		NumberOfShards:   4,
-	// 		NumberOfReplicas: 0,
-	// 	},
-	// }
-
-	// b, err = json.Marshal(index)
-	// CheckError(err)
-	// fmt.Println(b)
-
-	// PutJSON(ES_PATH+"lr_index", b)
-
 	// Initiate redis
 	if REDIS_PATH == "" {
 		REDIS_PATH = "localhost:6379"
