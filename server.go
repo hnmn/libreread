@@ -33,6 +33,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"runtime"
 	"strconv"
 	"strings"
@@ -60,12 +61,15 @@ const (
 	ESPATH_DEFAULT    = ""
 	REDISPATH_ENV     = "LIBREREAD_REDIS_PATH"
 	REDISPATH_DEFAULT = "localhost:6379"
+	ASSETPATH_ENV     = "LIBREREAD_ASSET_PATH"
+	ASSETPATH_DEFAULT = "."
 )
 
 var (
 	ESPath    = ESPATH_DEFAULT
 	RedisPath = REDISPATH_DEFAULT
 	ServerPort = PORT_DEFAULT
+	AssetPath = ASSETPATH_DEFAULT
 )
 
 func init() {
@@ -73,10 +77,12 @@ func init() {
 	ESPath     = _GetEnv(ESPATH_ENV, ESPATH_DEFAULT)
 	RedisPath  = _GetEnv(REDISPATH_ENV, REDISPATH_DEFAULT)
 	ServerPort = _GetEnv(PORT_ENV, PORT_DEFAULT)
-	
+	AssetPath  = _GetEnv(ASSETPATH_ENV, ASSETPATH_DEFAULT)
+
 	fmt.Printf("ElasticSearch: %s\n", ESPath)
 	fmt.Printf("Redis: %s\n", RedisPath)
-	
+	fmt.Printf("Asset path: %s\n", AssetPath)
+
 }
 
 func StartServer() {
@@ -87,11 +93,11 @@ func StartServer() {
 	r.Use(sessions.Sessions("mysession", store))
 
 	// Serve static files
-	r.Static("/static", "./static")
+	r.Static("/static", path.Join(AssetPath, "static"))
 	r.Static("/uploads", "./uploads")
 
 	// HTML rendering
-	r.LoadHTMLGlob("templates/*")
+	r.LoadHTMLGlob(path.Join(AssetPath, "templates/*"))
 
 	// Open sqlite3 database
 	db, err := sql.Open("sqlite3", "./libreread.db")
@@ -2971,3 +2977,5 @@ func (e *Env) PostSettings(c *gin.Context) {
 		c.Redirect(302, "/signin")
 	}
 }
+
+// vim: set sw=0 noet :
