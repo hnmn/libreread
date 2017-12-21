@@ -58,7 +58,7 @@ const (
 	PORT_DEFAULT      = "8080"
 	PORT_ENV          = "LIBREREAD_PORT"
 	ESPATH_ENV        = "LIBREREAD_ES_PATH"
-	ESPATH_DEFAULT    = ""
+	ESPATH_DEFAULT    = "localhost:9200"
 	REDISPATH_ENV     = "LIBREREAD_REDIS_PATH"
 	REDISPATH_DEFAULT = "localhost:6379"
 	ASSETPATH_ENV     = "LIBREREAD_ASSET_PATH"
@@ -66,18 +66,18 @@ const (
 )
 
 var (
-	ESPath    = ESPATH_DEFAULT
-	RedisPath = REDISPATH_DEFAULT
+	ESPath     = ESPATH_DEFAULT
+	RedisPath  = REDISPATH_DEFAULT
 	ServerPort = PORT_DEFAULT
-	AssetPath = ASSETPATH_DEFAULT
+	AssetPath  = ASSETPATH_DEFAULT
 )
 
 func init() {
 	fmt.Println("Running init ...")
-	ESPath     = _GetEnv(ESPATH_ENV, ESPATH_DEFAULT)
-	RedisPath  = _GetEnv(REDISPATH_ENV, REDISPATH_DEFAULT)
+	ESPath = _GetEnv(ESPATH_ENV, ESPATH_DEFAULT)
+	RedisPath = _GetEnv(REDISPATH_ENV, REDISPATH_DEFAULT)
 	ServerPort = _GetEnv(PORT_ENV, PORT_DEFAULT)
-	AssetPath  = _GetEnv(ASSETPATH_ENV, ASSETPATH_DEFAULT)
+	AssetPath = _GetEnv(ASSETPATH_ENV, ASSETPATH_DEFAULT)
 
 	fmt.Printf("ElasticSearch: %s\n", ESPath)
 	fmt.Printf("Redis: %s\n", RedisPath)
