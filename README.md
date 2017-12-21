@@ -15,7 +15,7 @@ GNU General Public License for more details.--->
 <!---You should have received a copy of the GNU General Public License
 along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.--->
 
-# LibreRead
+# LibreRead [![Build Status](https://api.travis-ci.org/LibreRead/server.svg?branch=master)](https://travis-ci.org/LibreRead/server)
 Self-hosted Free(Libre) Ebook Reader. https://libreread.org
 
 ![Alt text](/static/img/screenshot.png?raw=true "Home Page")
