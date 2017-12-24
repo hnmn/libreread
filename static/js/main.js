@@ -219,6 +219,7 @@ $(function() {
 			cache: false,
 			processData:false,
 			error: function(jqXHR, exception) {
+				$('.uploading-progress').hide()
 				var msg = '';
         		if (jqXHR.status === 403) {
 					alert(jqXHR.responseText)
