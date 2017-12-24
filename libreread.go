@@ -2015,7 +2015,7 @@ func (opfMetadata *OPFMetadataStruct) _FeedEPUBContent(packagePath string, title
 
 func (e *Env) UploadBook(c *gin.Context) {
 	if os.Getenv("LIBREREAD_DEMO_SERVER") == "1" {
-		c.String(200, "Upload is disabled in the demo server.")
+		c.String(403, "Upload is disabled in the demo server.")
 	} else {
 		email := _GetEmailFromSession(c)
 		if email != nil {
