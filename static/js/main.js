@@ -224,7 +224,7 @@ $(function() {
 					alert(jqXHR.responseText)
        			} else {
             		alert('Uncaught Error.\n' + jqXHR.responseText)
-        }		}
+        		}
 			},
             success: function (data) {
             	$('.uploading-progress').hide()
