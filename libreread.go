@@ -57,6 +57,8 @@ type Env struct {
 const (
 	PORT_DEFAULT      = "8080"
 	PORT_ENV          = "LIBREREAD_PORT"
+	ENABLE_ES_ENV     = "LIBREREAD_ELASTICSEARCH"
+	ENABLE_ES_DEFAULT = "0"
 	ESPATH_ENV        = "LIBREREAD_ES_PATH"
 	ESPATH_DEFAULT    = "localhost:9200"
 	REDISPATH_ENV     = "LIBREREAD_REDIS_PATH"
@@ -66,6 +68,7 @@ const (
 )
 
 var (
+	EnableES   = ENABLE_ES_DEFAULT
 	ESPath     = ESPATH_DEFAULT
 	RedisPath  = REDISPATH_DEFAULT
 	ServerPort = PORT_DEFAULT
@@ -74,6 +77,7 @@ var (
 
 func init() {
 	fmt.Println("Running init ...")
+	EnableES = _GetEnv(ENABLE_ES_ENV, ENABLE_ES_DEFAULT)
 	ESPath = _GetEnv(ESPATH_ENV, ESPATH_DEFAULT)
 	RedisPath = _GetEnv(REDISPATH_ENV, REDISPATH_DEFAULT)
 	ServerPort = _GetEnv(PORT_ENV, PORT_DEFAULT)
@@ -114,8 +118,7 @@ func StartServer() {
 	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS `user` " +
 		"(`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` VARCHAR(255) NOT NULL," +
 		" `email` VARCHAR(255) UNIQUE NOT NULL, `password_hash` VARCHAR(255) NOT NULL," +
-		" `confirmed` INTEGER DEFAULT 0, `full_text_search` INTEGER DEFAULT 0," +
-		" `forgot_password_token` VARCHAR(255))")
+		" `confirmed` INTEGER DEFAULT 0, `forgot_password_token` VARCHAR(255))")
 	CheckError(err)
 
 	_, err = stmt.Exec()
@@ -209,6 +212,67 @@ func StartServer() {
 		CheckError(err)
 		err = index.Close()
 		CheckError(err)
+	}
+
+	// Init Elasticsearch attachment
+	if EnableES == "1" {
+		// Elasticsearch settings
+		type Attachment struct {
+			Field        string `json:"field"`
+			IndexedChars int64  `json:"indexed_chars"`
+		}
+
+		type Processors struct {
+			Attachment Attachment `json:"attachment"`
+		}
+
+		type AttachmentStruct struct {
+			Description string       `json:"description"`
+			Processors  []Processors `json:"processors"`
+		}
+
+		attachment := &AttachmentStruct{
+			Description: "Process documents",
+			Processors: []Processors{
+				Processors{
+					Attachment: Attachment{
+						Field:        "thedata",
+						IndexedChars: -1,
+					},
+				},
+			},
+		}
+
+		fmt.Println(attachment)
+
+		b, err := json.Marshal(attachment)
+		CheckError(err)
+		fmt.Println(b)
+
+		PutJSON(ESPath+"_ingest/pipeline/attachment", b)
+
+		type Settings struct {
+			NumberOfShards   int64 `json:"number_of_shards"`
+			NumberOfReplicas int64 `json:"number_of_replicas"`
+		}
+
+		type IndexStruct struct {
+			Settings Settings `json:"settings"`
+		}
+
+		// Init Elasticsearch index
+		index := &IndexStruct{
+			Settings{
+				NumberOfShards:   4,
+				NumberOfReplicas: 0,
+			},
+		}
+
+		b, err = json.Marshal(index)
+		CheckError(err)
+		fmt.Println(b)
+
+		PutJSON(ESPath+"lr_index", b)
 	}
 
 	// Initiate redis
@@ -552,17 +616,7 @@ func (e *Env) EditBook(c *gin.Context) {
 		fileName := c.PostForm("filename")
 		fmt.Println(fileName)
 
-		rows, err := e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
-		CheckError(err)
-
-		var fts int64
-		if rows.Next() {
-			err := rows.Scan(&fts)
-			CheckError(err)
-		}
-		rows.Close()
-
-		rows, err = e.db.Query("SELECT id, title, author, cover, url from book where filename=?", fileName)
+		rows, err := e.db.Query("SELECT id, title, author, cover, url from book where filename=?", fileName)
 
 		var (
 			bookId  int64
@@ -578,7 +632,7 @@ func (e *Env) EditBook(c *gin.Context) {
 		}
 		rows.Close()
 
-		if fts == 0 {
+		if EnableES == "0" {
 
 			index, _ := bleve.Open("lr_index.bleve")
 			indexId := strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + oTitle + "*****" + oAuthor + "*****" + oCover + "*****" + oURL + "*****"
@@ -615,7 +669,7 @@ func (e *Env) EditBook(c *gin.Context) {
 			CheckError(err)
 		}
 
-		if fts == 0 {
+		if EnableES == "0" {
 			message := struct {
 				Id     string
 				Title  string
@@ -722,17 +776,7 @@ func (e *Env) DeleteBook(c *gin.Context) {
 				CheckError(err)
 			}
 
-			rows, err = e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
-			CheckError(err)
-
-			var fts int64
-			if rows.Next() {
-				err := rows.Scan(&fts)
-				CheckError(err)
-			}
-			rows.Close()
-
-			if fts == 0 {
+			if EnableES == "0" {
 				index, _ := bleve.Open("lr_index.bleve")
 				indexId := strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****"
 				err = index.Delete(indexId)
@@ -1977,16 +2021,6 @@ func (e *Env) UploadBook(c *gin.Context) {
 		if email != nil {
 			userId := e._GetUserId(email.(string))
 
-			rows, err := e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
-			CheckError(err)
-
-			var fts int64
-			if rows.Next() {
-				err := rows.Scan(&fts)
-				CheckError(err)
-			}
-			rows.Close()
-
 			multipart, err := c.Request.MultipartReader()
 			CheckError(err)
 
@@ -2060,7 +2094,7 @@ func (e *Env) UploadBook(c *gin.Context) {
 					bookId := e._InsertBookRecord(title, fileName, filePath, author, url, cover, pagesInt, "pdf", uploadedOn, userId)
 					fmt.Println(bookId)
 
-					if fts == 0 {
+					if EnableES == "0" {
 						index, err := bleve.Open("lr_index.bleve")
 						CheckError(err)
 
@@ -2159,7 +2193,7 @@ func (e *Env) UploadBook(c *gin.Context) {
 					bookId := e._InsertBookRecord(title, fileName, packagePath, author, url, cover, 1, "epub", uploadedOn, userId)
 					fmt.Println(bookId)
 
-					if fts == 0 {
+					if EnableES == "0" {
 						index, err := bleve.Open("lr_index.bleve")
 						CheckError(err)
 
@@ -2320,17 +2354,7 @@ func (e *Env) GetAutocomplete(c *gin.Context) {
 
 	email := _GetEmailFromSession(c)
 	if email != nil {
-		rows, err := e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
-		CheckError(err)
-
-		var fts int64
-		if rows.Next() {
-			err := rows.Scan(&fts)
-			CheckError(err)
-		}
-		rows.Close()
-
-		if fts == 0 {
+		if EnableES == "0" {
 			index, _ := bleve.Open("lr_index.bleve")
 			// err = index.Delete("1_3")
 			// CheckError(err)
@@ -2977,5 +3001,3 @@ func (e *Env) PostSettings(c *gin.Context) {
 		c.Redirect(302, "/signin")
 	}
 }
-
-// vim: set sw=0 noet :
