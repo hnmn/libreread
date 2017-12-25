@@ -30,6 +30,8 @@ docker-compose up -d redis
 
 if [[ $enableES == "y" || $enableES == "Y" || $enableES == "yes" || $enableES == "Yes" ]]
 then
+    sysctl -w vm.max_map_count=262144
+
     docker-compose -f docker-compose.yml -f docker-compose.elasticsearch.yml up -d elasticsearch
 
     docker-compose -f docker-compose.yml -f docker-compose.elasticsearch.yml run wait
