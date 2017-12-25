@@ -64,12 +64,6 @@ Description=LibreRead systemd service
 [Service]
 User=root
 Group=root
-Environment=\"LIBREREAD_DOMAIN_ADDRESS=$domain_address\"
-Environment=\"LIBREREAD_SMTP_SERVER=$smtp_server\"
-Environment=\"LIBREREAD_SMTP_PORT=$smtp_port\"
-Environment=\"LIBREREAD_SMTP_ADDRESS=$smtp_address\"
-Environment=\"LIBREREAD_SMTP_PASSWORD=$smtp_password\"
-Environment=\"LIBREREAD_ELASTICSEARCH=$ES\"
 WorkingDirectory=/var/libreread
 ExecStart=$ExecStart
 
