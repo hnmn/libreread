@@ -1,10 +1,10 @@
 ## Requirements to run the install script
-* Install Git
 * Install Docker 17.05 or higher
 * Install Docker Compose
 
 ## Install
-* `git clone https://github.com/LibreRead/LibreRead.git /var/libreread --depth 1`
+* `wget https://github.com/LibreRead/LibreRead/archive/v1.1.1.tar.gz --output-document=libreread.tar.gz`
+* `mkdir -p /var/libreread && tar xf libreread.tar.gz -C /var/libreread --strip-components 1`
 * `cd /var/libreread`
 * `./install.sh`
 
