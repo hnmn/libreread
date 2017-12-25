@@ -20,7 +20,7 @@ Self-hosted Free(Libre) Ebook Reader. https://libreread.org
 
 ![Alt text](/static/img/screenshot.png?raw=true "Home Page")
 
-### Features:
+### Features
  - Easy installation
  - Built using Golang
  - Browser-based
@@ -28,3 +28,6 @@ Self-hosted Free(Libre) Ebook Reader. https://libreread.org
  - Full-text search
  - Highlight & Annotate
  - Supports PDF & EPUB
+
+### LibreRead is supported by
+<img src="https://www.digitalocean.com/assets/media/logos-badges/png/DO_Logo_Horizontal_Black-a93a7c21.png" height="40px" alt="Supported by Digital Ocean" />
