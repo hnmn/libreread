@@ -38,6 +38,8 @@ docker-compose -f docker-compose.yml -f docker-compose.elasticsearch.yml up -d r
 
 if [ $ES -eq 1 ]
 then
+    sysctl -w vm.max_map_count=262144
+    
     docker-compose -f docker-compose.yml -f docker-compose.elasticsearch.yml up -d elasticsearch
 
     docker-compose -f docker-compose.yml -f docker-compose.elasticsearch.yml run wait
