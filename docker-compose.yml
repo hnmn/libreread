@@ -11,10 +11,10 @@ services:
       - "LIBREREAD_SMTP_ADDRESS=${LIBREREAD_SMTP_ADDRESS}"
       - "LIBREREAD_SMTP_PASSWORD=${LIBREREAD_SMTP_PASSWORD}"
     ports:
-    - "8080:8080"
+      - "8080:8080"
     volumes:
-    - ./libreread-data:/libreread
+      - ./libreread-data:/libreread
   redis:
     image: redis
     volumes:
-    - ./redis-data:/libreread-redis
+      - ./redis-data:/libreread-redis
