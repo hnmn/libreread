@@ -388,7 +388,8 @@ func GetJSON(url string, target interface{}) error {
 func PutJSON(url string, message []byte) {
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(message))
 	CheckError(err)
-	req.Header.Set("Content-Type", "application/json")
+	req.
+  er.Set("Content-Type", "application/json")
 	res, err := myClient.Do(req)
 	CheckError(err)
 	content, err := ioutil.ReadAll(res.Body)
