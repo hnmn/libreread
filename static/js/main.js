@@ -218,6 +218,15 @@ $(function() {
 			contentType: false,
 			cache: false,
 			processData:false,
+			error: function(jqXHR, exception) {
+				$('.uploading-progress').hide()
+				var msg = '';
+        		if (jqXHR.status === 403) {
+					alert(jqXHR.responseText)
+       			} else {
+            		alert('Uncaught Error.\n' + jqXHR.responseText)
+        		}
+			},
             success: function (data) {
             	$('.uploading-progress').hide()
                 alert(data)

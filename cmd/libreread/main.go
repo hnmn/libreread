@@ -1,6 +1,6 @@
 package main
 
-import libreread "github.com/LibreRead/server"
+import libreread "github.com/LibreRead/LibreRead"
 
 func main() {
 	libreread.StartServer()

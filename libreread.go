@@ -55,34 +55,61 @@ type Env struct {
 }
 
 const (
-	PORT_DEFAULT      = "8080"
-	PORT_ENV          = "LIBREREAD_PORT"
-	ESPATH_ENV        = "LIBREREAD_ES_PATH"
-	ESPATH_DEFAULT    = "localhost:9200"
-	REDISPATH_ENV     = "LIBREREAD_REDIS_PATH"
-	REDISPATH_DEFAULT = "localhost:6379"
-	ASSETPATH_ENV     = "LIBREREAD_ASSET_PATH"
-	ASSETPATH_DEFAULT = "."
+	PORT_DEFAULT           = "8080"
+	PORT_ENV               = "LIBREREAD_PORT"
+	ENABLE_ES_ENV          = "LIBREREAD_ELASTICSEARCH"
+	ENABLE_ES_DEFAULT      = "0"
+	ESPATH_ENV             = "LIBREREAD_ES_PATH"
+	ESPATH_DEFAULT         = "http://localhost:9200"
+	REDISPATH_ENV          = "LIBREREAD_REDIS_PATH"
+	REDISPATH_DEFAULT      = "localhost:6379"
+	ASSETPATH_ENV          = "LIBREREAD_ASSET_PATH"
+	ASSETPATH_DEFAULT      = "."
+	DOMAIN_ADDRESS_ENV     = "LIBREREAD_DOMAIN_ADDRESS"
+	DOMAIN_ADDRESS_DEFAULT = ""
+	SMTP_SERVER_ENV        = "LIBREREAD_SMTP_SERVER"
+	SMTP_SERVER_DEFAULT    = ""
+	SMTP_PORT_ENV          = "LIBREREAD_SMTP_PORT"
+	SMTP_PORT_DEFAULT      = ""
+	SMTP_ADDRESS_ENV       = "LIBREREAD_SMTP_ADDRESS"
+	SMTP_ADDRESS_DEFAULT   = ""
+	SMTP_PASSWORD_ENV      = "LIBREREAD_SMTP_PASSWORD"
+	SMTP_PASSWORD_DEFAULT  = ""
 )
 
 var (
-	ESPath     = ESPATH_DEFAULT
-	RedisPath  = REDISPATH_DEFAULT
-	ServerPort = PORT_DEFAULT
-	AssetPath  = ASSETPATH_DEFAULT
+	EnableES      = ENABLE_ES_DEFAULT
+	ESPath        = ESPATH_DEFAULT
+	RedisPath     = REDISPATH_DEFAULT
+	ServerPort    = PORT_DEFAULT
+	AssetPath     = ASSETPATH_DEFAULT
+	DomainAddress = DOMAIN_ADDRESS_DEFAULT
+	SMTPServer    = SMTP_SERVER_DEFAULT
+	SMTPPort      = SMTP_PORT_DEFAULT
+	SMTPAddress   = SMTP_ADDRESS_DEFAULT
+	SMTPPassword  = SMTP_PASSWORD_DEFAULT
 )
 
 func init() {
 	fmt.Println("Running init ...")
+	EnableES = _GetEnv(ENABLE_ES_ENV, ENABLE_ES_DEFAULT)
 	ESPath = _GetEnv(ESPATH_ENV, ESPATH_DEFAULT)
 	RedisPath = _GetEnv(REDISPATH_ENV, REDISPATH_DEFAULT)
 	ServerPort = _GetEnv(PORT_ENV, PORT_DEFAULT)
 	AssetPath = _GetEnv(ASSETPATH_ENV, ASSETPATH_DEFAULT)
+	DomainAddress = _GetEnv(DOMAIN_ADDRESS_ENV, DOMAIN_ADDRESS_DEFAULT)
+	SMTPServer = _GetEnv(SMTP_SERVER_ENV, SMTP_SERVER_DEFAULT)
+	SMTPPort = _GetEnv(SMTP_PORT_ENV, SMTP_PORT_DEFAULT)
+	SMTPAddress = _GetEnv(SMTP_ADDRESS_ENV, SMTP_ADDRESS_DEFAULT)
+	SMTPPassword = _GetEnv(SMTP_PASSWORD_ENV, SMTP_PASSWORD_DEFAULT)
 
 	fmt.Printf("ElasticSearch: %s\n", ESPath)
 	fmt.Printf("Redis: %s\n", RedisPath)
 	fmt.Printf("Asset path: %s\n", AssetPath)
-
+	fmt.Printf("Domain address: %s\n", DomainAddress)
+	fmt.Printf("SMTP server: %s\n", SMTPServer)
+	fmt.Printf("SMTP port: %s\n", SMTPPort)
+	fmt.Printf("SMTP address: %s\n", SMTPAddress)
 }
 
 func StartServer() {
@@ -114,8 +141,7 @@ func StartServer() {
 	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS `user` " +
 		"(`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` VARCHAR(255) NOT NULL," +
 		" `email` VARCHAR(255) UNIQUE NOT NULL, `password_hash` VARCHAR(255) NOT NULL," +
-		" `confirmed` INTEGER DEFAULT 0, `full_text_search` INTEGER DEFAULT 0," +
-		" `forgot_password_token` VARCHAR(255))")
+		" `confirmed` INTEGER DEFAULT 0, `forgot_password_token` VARCHAR(255))")
 	CheckError(err)
 
 	_, err = stmt.Exec()
@@ -211,6 +237,67 @@ func StartServer() {
 		CheckError(err)
 	}
 
+	// Init Elasticsearch attachment
+	if EnableES == "1" {
+		// Elasticsearch settings
+		type Attachment struct {
+			Field        string `json:"field"`
+			IndexedChars int64  `json:"indexed_chars"`
+		}
+
+		type Processors struct {
+			Attachment Attachment `json:"attachment"`
+		}
+
+		type AttachmentStruct struct {
+			Description string       `json:"description"`
+			Processors  []Processors `json:"processors"`
+		}
+
+		attachment := &AttachmentStruct{
+			Description: "Process documents",
+			Processors: []Processors{
+				Processors{
+					Attachment: Attachment{
+						Field:        "thedata",
+						IndexedChars: -1,
+					},
+				},
+			},
+		}
+
+		fmt.Println(attachment)
+
+		b, err := json.Marshal(attachment)
+		CheckError(err)
+		fmt.Println(b)
+
+		PutJSON(ESPath+"/_ingest/pipeline/attachment", b)
+
+		type Settings struct {
+			NumberOfShards   int64 `json:"number_of_shards"`
+			NumberOfReplicas int64 `json:"number_of_replicas"`
+		}
+
+		type IndexStruct struct {
+			Settings Settings `json:"settings"`
+		}
+
+		// Init Elasticsearch index
+		index := &IndexStruct{
+			Settings{
+				NumberOfShards:   4,
+				NumberOfReplicas: 0,
+			},
+		}
+
+		b, err = json.Marshal(index)
+		CheckError(err)
+		fmt.Println(b)
+
+		PutJSON(ESPath+"/lr_index", b)
+	}
+
 	// Initiate redis
 	client := redis.NewClient(&redis.Options{
 		Addr:     RedisPath,
@@ -301,6 +388,7 @@ func GetJSON(url string, target interface{}) error {
 func PutJSON(url string, message []byte) {
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(message))
 	CheckError(err)
+	req.Header.Set("Content-Type", "application/json")
 	res, err := myClient.Do(req)
 	CheckError(err)
 	content, err := ioutil.ReadAll(res.Body)
@@ -312,6 +400,7 @@ func PostJSON(url string, message []byte) {
 	fmt.Println(url)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(message))
 	CheckError(err)
+	req.Header.Set("Content-Type", "application/json")
 	res, err := myClient.Do(req)
 	CheckError(err)
 	content, err := ioutil.ReadAll(res.Body)
@@ -552,17 +641,7 @@ func (e *Env) EditBook(c *gin.Context) {
 		fileName := c.PostForm("filename")
 		fmt.Println(fileName)
 
-		rows, err := e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
-		CheckError(err)
-
-		var fts int64
-		if rows.Next() {
-			err := rows.Scan(&fts)
-			CheckError(err)
-		}
-		rows.Close()
-
-		rows, err = e.db.Query("SELECT id, title, author, cover, url from book where filename=?", fileName)
+		rows, err := e.db.Query("SELECT id, title, author, cover, url from book where filename=?", fileName)
 
 		var (
 			bookId  int64
@@ -578,7 +657,7 @@ func (e *Env) EditBook(c *gin.Context) {
 		}
 		rows.Close()
 
-		if fts == 0 {
+		if EnableES == "0" {
 
 			index, _ := bleve.Open("lr_index.bleve")
 			indexId := strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + oTitle + "*****" + oAuthor + "*****" + oCover + "*****" + oURL + "*****"
@@ -615,7 +694,7 @@ func (e *Env) EditBook(c *gin.Context) {
 			CheckError(err)
 		}
 
-		if fts == 0 {
+		if EnableES == "0" {
 			message := struct {
 				Id     string
 				Title  string
@@ -641,7 +720,7 @@ func (e *Env) EditBook(c *gin.Context) {
 
 			fmt.Println(bms)
 
-			indexURL := ESPath + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "/_update"
+			indexURL := ESPath + "/lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "/_update"
 			fmt.Println(indexURL)
 
 			b, err := json.Marshal(bms)
@@ -656,7 +735,7 @@ func (e *Env) EditBook(c *gin.Context) {
 			CheckError(err)
 
 			for i := 0; i < int(totalPages); i++ {
-				indexURL := ESPath + "lr_index/book_detail/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "_" + strconv.Itoa(i) + "/_update"
+				indexURL := ESPath + "/lr_index/book_detail/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "_" + strconv.Itoa(i) + "/_update"
 				fmt.Println(indexURL)
 
 				b, err := json.Marshal(bms)
@@ -673,6 +752,7 @@ func (e *Env) EditBook(c *gin.Context) {
 func DeleteHTTPRequest(url string) {
 	req, err := http.NewRequest("DELETE", url, nil)
 	CheckError(err)
+	req.Header.Set("Content-Type", "application/json")
 	res, err := myClient.Do(req)
 	CheckError(err)
 
@@ -722,17 +802,7 @@ func (e *Env) DeleteBook(c *gin.Context) {
 				CheckError(err)
 			}
 
-			rows, err = e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
-			CheckError(err)
-
-			var fts int64
-			if rows.Next() {
-				err := rows.Scan(&fts)
-				CheckError(err)
-			}
-			rows.Close()
-
-			if fts == 0 {
+			if EnableES == "0" {
 				index, _ := bleve.Open("lr_index.bleve")
 				indexId := strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****"
 				err = index.Delete(indexId)
@@ -741,7 +811,7 @@ func (e *Env) DeleteBook(c *gin.Context) {
 				err = index.Close()
 				CheckError(err)
 			} else {
-				indexURL := ESPath + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
+				indexURL := ESPath + "/lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
 				fmt.Println(indexURL)
 
 				DeleteHTTPRequest(indexURL)
@@ -753,7 +823,7 @@ func (e *Env) DeleteBook(c *gin.Context) {
 				CheckError(err)
 
 				for i := 0; i <= int(totalPages); i++ {
-					indexURL := ESPath + "lr_index/book_detail/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "_" + strconv.Itoa(i)
+					indexURL := ESPath + "/lr_index/book_detail/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) + "_" + strconv.Itoa(i)
 					fmt.Println(indexURL)
 
 					DeleteHTTPRequest(indexURL)
@@ -1703,7 +1773,7 @@ func _PDFSeparate(path string, filePath string, wg *sync.WaitGroup) error {
 }
 
 func _ConstructPDFIndexURL(userId int64, bookId int64, i int64, pageJSON []byte) {
-	indexURL := ESPath + "lr_index/book_detail/" +
+	indexURL := ESPath + "/lr_index/book_detail/" +
 		strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) +
 		"_" + strconv.Itoa(int(i)) + "?pipeline=attachment"
 	fmt.Println("Index URL: " + indexURL)
@@ -1959,7 +2029,7 @@ func (opfMetadata *OPFMetadataStruct) _FeedEPUBContent(packagePath string, title
 				pageJSON, err := json.Marshal(bookDetail)
 				CheckError(err)
 
-				indexURL := ESPath + "lr_index/book_detail/" +
+				indexURL := ESPath + "/lr_index/book_detail/" +
 					strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId)) +
 					"_" + strconv.Itoa(int(i)) + "?pipeline=attachment"
 				fmt.Println("Index URL: " + indexURL)
@@ -1971,21 +2041,11 @@ func (opfMetadata *OPFMetadataStruct) _FeedEPUBContent(packagePath string, title
 
 func (e *Env) UploadBook(c *gin.Context) {
 	if os.Getenv("LIBREREAD_DEMO_SERVER") == "1" {
-		c.String(200, "Upload is disabled in the demo server.")
+		c.String(403, "Upload is disabled in the demo server.")
 	} else {
 		email := _GetEmailFromSession(c)
 		if email != nil {
 			userId := e._GetUserId(email.(string))
-
-			rows, err := e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
-			CheckError(err)
-
-			var fts int64
-			if rows.Next() {
-				err := rows.Scan(&fts)
-				CheckError(err)
-			}
-			rows.Close()
 
 			multipart, err := c.Request.MultipartReader()
 			CheckError(err)
@@ -2060,7 +2120,7 @@ func (e *Env) UploadBook(c *gin.Context) {
 					bookId := e._InsertBookRecord(title, fileName, filePath, author, url, cover, pagesInt, "pdf", uploadedOn, userId)
 					fmt.Println(bookId)
 
-					if fts == 0 {
+					if EnableES == "0" {
 						index, err := bleve.Open("lr_index.bleve")
 						CheckError(err)
 
@@ -2088,7 +2148,7 @@ func (e *Env) UploadBook(c *gin.Context) {
 
 						fmt.Println(bookInfo)
 
-						indexURL := ESPath + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
+						indexURL := ESPath + "/lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
 						fmt.Println(indexURL)
 
 						b, err := json.Marshal(bookInfo)
@@ -2159,7 +2219,7 @@ func (e *Env) UploadBook(c *gin.Context) {
 					bookId := e._InsertBookRecord(title, fileName, packagePath, author, url, cover, 1, "epub", uploadedOn, userId)
 					fmt.Println(bookId)
 
-					if fts == 0 {
+					if EnableES == "0" {
 						index, err := bleve.Open("lr_index.bleve")
 						CheckError(err)
 
@@ -2188,7 +2248,7 @@ func (e *Env) UploadBook(c *gin.Context) {
 						fmt.Println(bookInfo)
 
 						// Feed book info to ES
-						indexURL := ESPath + "lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
+						indexURL := ESPath + "/lr_index/book_info/" + strconv.Itoa(int(userId)) + "_" + strconv.Itoa(int(bookId))
 						fmt.Println(indexURL)
 
 						b, err := json.Marshal(bookInfo)
@@ -2305,6 +2365,7 @@ type BookSearchResult struct {
 func GetJSONPassPayload(url string, payload []byte) []byte {
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer(payload))
 	CheckError(err)
+	req.Header.Set("Content-Type", "application/json")
 	res, err := myClient.Do(req)
 	CheckError(err)
 	content, err := ioutil.ReadAll(res.Body)
@@ -2320,17 +2381,7 @@ func (e *Env) GetAutocomplete(c *gin.Context) {
 
 	email := _GetEmailFromSession(c)
 	if email != nil {
-		rows, err := e.db.Query("SELECT `full_text_search` FROM `user` WHERE `email` = ?", email.(string))
-		CheckError(err)
-
-		var fts int64
-		if rows.Next() {
-			err := rows.Scan(&fts)
-			CheckError(err)
-		}
-		rows.Close()
-
-		if fts == 0 {
+		if EnableES == "0" {
 			index, _ := bleve.Open("lr_index.bleve")
 			// err = index.Delete("1_3")
 			// CheckError(err)
@@ -2385,7 +2436,7 @@ func (e *Env) GetAutocomplete(c *gin.Context) {
 			b, err := json.Marshal(payloadInfo)
 			CheckError(err)
 
-			indexURL := ESPath + "lr_index/book_info/_search"
+			indexURL := ESPath + "/lr_index/book_info/_search"
 
 			res := GetJSONPassPayload(indexURL, b)
 
@@ -2423,7 +2474,7 @@ func (e *Env) GetAutocomplete(c *gin.Context) {
 			b, err = json.Marshal(payloadDetail)
 			CheckError(err)
 
-			indexURL = ESPath + "lr_index/book_detail/_search"
+			indexURL = ESPath + "/lr_index/book_detail/_search"
 
 			res = GetJSONPassPayload(indexURL, b)
 
@@ -2977,5 +3028,3 @@ func (e *Env) PostSettings(c *gin.Context) {
 		c.Redirect(302, "/signin")
 	}
 }
-
-// vim: set sw=0 noet :
