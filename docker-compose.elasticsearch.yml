@@ -3,7 +3,6 @@ version: '2.2'
 services:
   libreread:
     environment:
-      - "LIBREREAD_ELASTICSEARCH=1"
       - "LIBREREAD_ES_PATH=http://elasticsearch:9200"
     depends_on:
       - elasticsearch
