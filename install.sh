@@ -25,9 +25,6 @@ else
     ES=0
 fi
 
-echo "ElasticSearch mode"
-echo $ES
-
 [ -e .env ] && rm .env
 
 echo "LIBREREAD_DOMAIN_ADDRESS=$domain_address
