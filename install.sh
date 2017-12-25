@@ -44,13 +44,13 @@ then
 
     docker-compose -f docker-compose.yml -f docker-compose.elasticsearch.yml run wait
     
-    docker-compose -f docker-compose.yml -f docker-compose.elasticsearch.yml build libreread
+    # docker-compose -f docker-compose.yml -f docker-compose.elasticsearch.yml build libreread
     
-    ExecStart="/usr/local/bin/docker-compose -f docker-compose.yml -f docker-compose.elasticsearch.yml run libreread"
+    ExecStart="/usr/local/bin/docker-compose -f docker-compose.yml -f docker-compose.elasticsearch.yml up libreread"
 else
-    docker-compose build libreread
+    # docker-compose build libreread
     
-    ExecStart="/usr/local/bin/docker-compose run libreread"
+    ExecStart="/usr/local/bin/docker-compose up libreread"
 fi
 
 [ -e libreread.service ] && rm libreread.service
