@@ -1,10 +1,15 @@
----
 version: '2.2'
+
 services:
   libreread:
     build: .
     environment:
-    - "LIBREREAD_REDIS_PATH=redis:6379"
+      - "LIBREREAD_REDIS_PATH=redis:6379"
+      - "LIBREREAD_DOMAIN_ADDRESS=${LIBREREAD_DOMAIN_ADDRESS}"
+      - "LIBREREAD_SMTP_SERVER=${LIBREREAD_SMTP_SERVER}"
+      - "LIBREREAD_SMTP_PORT=${LIBREREAD_SMTP_PORT}"
+      - "LIBREREAD_SMTP_ADDRESS=${LIBREREAD_SMTP_ADDRESS}"
+      - "LIBREREAD_SMTP_PASSWORD=${LIBREREAD_SMTP_PASSWORD}"
     ports:
     - "8080:8080"
     volumes:
@@ -12,5 +17,4 @@ services:
   redis:
     image: redis
     volumes:
-    - ./redis-data:/data
-...
+    - ./redis-data:/libreread-redis

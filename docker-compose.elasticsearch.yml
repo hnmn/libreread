@@ -1,0 +1,26 @@
+version: '2.2'
+
+services:
+  libreread:
+    environment:
+      - "LIBREREAD_ELASTICSEARCH=1"
+      - "LIBREREAD_ES_PATH=http://elasticsearch:9200"
+    depends_on:
+      - elasticsearch
+  elasticsearch:
+    build:
+      context: elasticsearch/
+    container_name: elasticsearch
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xmx1g -Xms1g"
+  wait:
+    image: waisbrot/wait
+    links:
+      - elasticsearch
+    environment:
+      - TARGETS=elasticsearch:9200

@@ -55,24 +55,39 @@ type Env struct {
 }
 
 const (
-	PORT_DEFAULT      = "8080"
-	PORT_ENV          = "LIBREREAD_PORT"
-	ENABLE_ES_ENV     = "LIBREREAD_ELASTICSEARCH"
-	ENABLE_ES_DEFAULT = "0"
-	ESPATH_ENV        = "LIBREREAD_ES_PATH"
-	ESPATH_DEFAULT    = "http://localhost:9200"
-	REDISPATH_ENV     = "LIBREREAD_REDIS_PATH"
-	REDISPATH_DEFAULT = "localhost:6379"
-	ASSETPATH_ENV     = "LIBREREAD_ASSET_PATH"
-	ASSETPATH_DEFAULT = "."
+	PORT_DEFAULT           = "8080"
+	PORT_ENV               = "LIBREREAD_PORT"
+	ENABLE_ES_ENV          = "LIBREREAD_ELASTICSEARCH"
+	ENABLE_ES_DEFAULT      = "0"
+	ESPATH_ENV             = "LIBREREAD_ES_PATH"
+	ESPATH_DEFAULT         = "http://localhost:9200"
+	REDISPATH_ENV          = "LIBREREAD_REDIS_PATH"
+	REDISPATH_DEFAULT      = "localhost:6379"
+	ASSETPATH_ENV          = "LIBREREAD_ASSET_PATH"
+	ASSETPATH_DEFAULT      = "."
+	DOMAIN_ADDRESS_ENV     = "LIBREREAD_DOMAIN_ADDRESS"
+	DOMAIN_ADDRESS_DEFAULT = ""
+	SMTP_SERVER_ENV        = "LIBREREAD_SMTP_SERVER"
+	SMTP_SERVER_DEFAULT    = ""
+	SMTP_PORT_ENV          = "LIBREREAD_SMTP_PORT"
+	SMTP_PORT_DEFAULT      = ""
+	SMTP_ADDRESS_ENV       = "LIBREREAD_SMTP_ADDRESS"
+	SMTP_ADDRESS_DEFAULT   = ""
+	SMTP_PASSWORD_ENV      = "LIBREREAD_SMTP_PASSWORD"
+	SMTP_PASSWORD_DEFAULT  = ""
 )
 
 var (
-	EnableES   = ENABLE_ES_DEFAULT
-	ESPath     = ESPATH_DEFAULT
-	RedisPath  = REDISPATH_DEFAULT
-	ServerPort = PORT_DEFAULT
-	AssetPath  = ASSETPATH_DEFAULT
+	EnableES      = ENABLE_ES_DEFAULT
+	ESPath        = ESPATH_DEFAULT
+	RedisPath     = REDISPATH_DEFAULT
+	ServerPort    = PORT_DEFAULT
+	AssetPath     = ASSETPATH_DEFAULT
+	DomainAddress = DOMAIN_ADDRESS_DEFAULT
+	SMTPServer    = SMTP_SERVER_DEFAULT
+	SMTPPort      = SMTP_PORT_DEFAULT
+	SMTPAddress   = SMTP_ADDRESS_DEFAULT
+	SMTPPassword  = SMTP_PASSWORD_DEFAULT
 )
 
 func init() {
@@ -82,11 +97,19 @@ func init() {
 	RedisPath = _GetEnv(REDISPATH_ENV, REDISPATH_DEFAULT)
 	ServerPort = _GetEnv(PORT_ENV, PORT_DEFAULT)
 	AssetPath = _GetEnv(ASSETPATH_ENV, ASSETPATH_DEFAULT)
+	DomainAddress = _GetEnv(DOMAIN_ADDRESS_ENV, DOMAIN_ADDRESS_DEFAULT)
+	SMTPServer = _GetEnv(SMTP_SERVER_ENV, SMTP_SERVER_DEFAULT)
+	SMTPPort = _GetEnv(SMTP_PORT_ENV, SMTP_PORT_DEFAULT)
+	SMTPAddress = _GetEnv(SMTP_ADDRESS_ENV, SMTP_ADDRESS_DEFAULT)
+	SMTPPassword = _GetEnv(SMTP_PASSWORD_ENV, SMTP_PASSWORD_DEFAULT)
 
 	fmt.Printf("ElasticSearch: %s\n", ESPath)
 	fmt.Printf("Redis: %s\n", RedisPath)
 	fmt.Printf("Asset path: %s\n", AssetPath)
-
+	fmt.Printf("Domain address: %s\n", DomainAddress)
+	fmt.Printf("SMTP server: %s\n", SMTPServer)
+	fmt.Printf("SMTP port: %s\n", SMTPPort)
+	fmt.Printf("SMTP address: %s\n", SMTPAddress)
 }
 
 func StartServer() {
@@ -365,6 +388,8 @@ func GetJSON(url string, target interface{}) error {
 func PutJSON(url string, message []byte) {
 	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(message))
 	CheckError(err)
+	req.
+  er.Set("Content-Type", "application/json")
 	res, err := myClient.Do(req)
 	CheckError(err)
 	content, err := ioutil.ReadAll(res.Body)
@@ -376,6 +401,7 @@ func PostJSON(url string, message []byte) {
 	fmt.Println(url)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(message))
 	CheckError(err)
+	req.Header.Set("Content-Type", "application/json")
 	res, err := myClient.Do(req)
 	CheckError(err)
 	content, err := ioutil.ReadAll(res.Body)
@@ -727,6 +753,7 @@ func (e *Env) EditBook(c *gin.Context) {
 func DeleteHTTPRequest(url string) {
 	req, err := http.NewRequest("DELETE", url, nil)
 	CheckError(err)
+	req.Header.Set("Content-Type", "application/json")
 	res, err := myClient.Do(req)
 	CheckError(err)
 
@@ -2339,6 +2366,7 @@ type BookSearchResult struct {
 func GetJSONPassPayload(url string, payload []byte) []byte {
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer(payload))
 	CheckError(err)
+	req.Header.Set("Content-Type", "application/json")
 	res, err := myClient.Do(req)
 	CheckError(err)
 	content, err := ioutil.ReadAll(res.Body)
