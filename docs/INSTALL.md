@@ -4,7 +4,7 @@
 * Install Docker Compose
 
 ## Install
-* `git clone https://github.com/LibreRead/install.git /var/libreread --depth 1`
+* `git clone https://github.com/LibreRead/LibreRead.git /var/libreread --depth 1`
 * `cd /var/libreread`
 * `./install.sh`
 
