@@ -30,4 +30,4 @@ Self-hosted Free(Libre) Ebook Reader. https://libreread.org
  - Supports PDF & EPUB
 
 ### LibreRead is supported by
-<img src="https://www.digitalocean.com/assets/media/logos-badges/png/DO_Powered_by_Badge_black-a35c64eb.png" height="50px" alt="Supported by Digital Ocean" />
+<img src="https://www.digitalocean.com/assets/media/logos-badges/png/DO_Powered_by_Badge_black-a35c64eb.png" height="40px" alt="Supported by Digital Ocean" />
