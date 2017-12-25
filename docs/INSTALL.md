@@ -4,7 +4,7 @@
 
 ## Install
 * `wget https://github.com/LibreRead/LibreRead/archive/v1.1.1.tar.gz --output-document=libreread.tar.gz`
-* `mkdir -p /var/libreread && tar xf libreread.tar.gz -C /var/libreread --strip-components 1`
+* `mkdir -p /var/libreread && tar xf libreread.tar.gz -C /var/libreread --strip-components 1 && rm libreread.tar.gz`
 * `cd /var/libreread`
 * `./install.sh`
 
