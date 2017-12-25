@@ -34,12 +34,12 @@ LIBREREAD_SMTP_ADDRESS=$smtp_address
 LIBREREAD_SMTP_PASSWORD=$smtp_password
 LIBREREAD_ELASTICSEARCH=$ES" >> .env
 
-docker-compose -f docker-compose.yml -f docker-compose.elasticsearch.yml up -d redis
+docker-compose up -d redis
 
 if [ $ES -eq 1 ]
 then
     sysctl -w vm.max_map_count=262144
-    
+
     docker-compose -f docker-compose.yml -f docker-compose.elasticsearch.yml up -d elasticsearch
 
     docker-compose -f docker-compose.yml -f docker-compose.elasticsearch.yml run wait
