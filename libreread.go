@@ -103,6 +103,7 @@ func init() {
 	SMTPAddress = _GetEnv(SMTP_ADDRESS_ENV, SMTP_ADDRESS_DEFAULT)
 	SMTPPassword = _GetEnv(SMTP_PASSWORD_ENV, SMTP_PASSWORD_DEFAULT)
 
+	fmt.Printf("Enable Elasticsearch: %s\n", EnableES)
 	fmt.Printf("ElasticSearch: %s\n", ESPath)
 	fmt.Printf("Redis: %s\n", RedisPath)
 	fmt.Printf("Asset path: %s\n", AssetPath)
