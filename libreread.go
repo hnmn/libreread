@@ -2382,6 +2382,7 @@ func (e *Env) GetAutocomplete(c *gin.Context) {
 	email := _GetEmailFromSession(c)
 	if email != nil {
 		if EnableES == "0" {
+			fmt.Println("Searching bleve ...")
 			index, _ := bleve.Open("lr_index.bleve")
 			// err = index.Delete("1_3")
 			// CheckError(err)
@@ -2423,6 +2424,7 @@ func (e *Env) GetAutocomplete(c *gin.Context) {
 
 			c.JSON(200, bsr)
 		} else {
+			fmt.Println("Searching elasticsearch ...")
 			payloadInfo := &BookInfoPayloadStruct{
 				Source: []string{"title", "author", "url", "cover"},
 				Query: BookInfoQuery{
