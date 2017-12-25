@@ -25,14 +25,14 @@ else
     ES=0
 fi
 
-[ -e .env ] && rm .env
+# [ -e .env ] && rm .env
 
-echo "LIBREREAD_DOMAIN_ADDRESS=$domain_address
-LIBREREAD_SMTP_SERVER=$smtp_server
-LIBREREAD_SMTP_PORT=$smtp_port
-LIBREREAD_SMTP_ADDRESS=$smtp_address
-LIBREREAD_SMTP_PASSWORD=$smtp_password
-LIBREREAD_ELASTICSEARCH=$ES" >> .env
+# echo "LIBREREAD_DOMAIN_ADDRESS=$domain_address
+# LIBREREAD_SMTP_SERVER=$smtp_server
+# LIBREREAD_SMTP_PORT=$smtp_port
+# LIBREREAD_SMTP_ADDRESS=$smtp_address
+# LIBREREAD_SMTP_PASSWORD=$smtp_password
+# LIBREREAD_ELASTICSEARCH=$ES" >> .env
 
 docker-compose up -d redis
 
@@ -61,6 +61,12 @@ Description=LibreRead systemd service
 [Service]
 User=root
 Group=root
+Environment=\"LIBREREAD_DOMAIN_ADDRESS=$domain_address\"
+Environment=\"LIBREREAD_SMTP_SERVER=$smtp_server\"
+Environment=\"LIBREREAD_SMTP_PORT=$smtp_port\"
+Environment=\"LIBREREAD_SMTP_ADDRESS=$smtp_address\"
+Environment=\"LIBREREAD_SMTP_PASSWORD=$smtp_password\"
+Environment=\"LIBREREAD_ELASTICSEARCH=$ES\"
 WorkingDirectory=/var/libreread
 ExecStart=$ExecStart
 
