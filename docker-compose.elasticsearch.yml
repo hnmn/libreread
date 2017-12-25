@@ -4,6 +4,7 @@ services:
   libreread:
     environment:
       - "LIBREREAD_ES_PATH=http://elasticsearch:9200"
+      - "LIBREREAD_ELASTICSEARCH=1"
     depends_on:
       - elasticsearch
   elasticsearch:

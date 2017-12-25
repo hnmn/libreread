@@ -15,28 +15,20 @@ read smtp_address
 echo Please enter your SMTP password. This will be application-specific password or email password
 read smtp_password
 
-echo "Do you want to enable full-text search with ElasticSearch [Y/n] ?"
-read enableES
-
-if [[ $enableES == "y" || $enableES == "Y" || $enableES == "yes" || $enableES == "Yes" ]]
-then
-    ES=1
-else
-    ES=0
-fi
-
 [ -e .env ] && rm .env
 
 echo "LIBREREAD_DOMAIN_ADDRESS=$domain_address
 LIBREREAD_SMTP_SERVER=$smtp_server
 LIBREREAD_SMTP_PORT=$smtp_port
 LIBREREAD_SMTP_ADDRESS=$smtp_address
-LIBREREAD_SMTP_PASSWORD=$smtp_password
-LIBREREAD_ELASTICSEARCH=$ES" >> .env
+LIBREREAD_SMTP_PASSWORD=$smtp_password" >> .env
+
+echo "Do you want to enable full-text search with ElasticSearch [Y/n] ?"
+read enableES
 
 docker-compose up -d redis
 
-if [ $ES -eq 1 ]
+if [[ $enableES == "y" || $enableES == "Y" || $enableES == "yes" || $enableES == "Yes" ]]
 then
     sysctl -w vm.max_map_count=262144
 
