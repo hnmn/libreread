@@ -31,3 +31,5 @@ Self-hosted Free(Libre) Ebook Reader. https://libreread.org
 
 ### Supported by
 <img src="https://www.digitalocean.com/assets/media/logos-badges/png/DO_Logo_Horizontal_Black-a93a7c21.png" height="40px" alt="Supported by Digital Ocean" />
+
+If you find LibreRead useful, you could support our development by either making an [one-time donation](https://www.paypal.me/paynirmal) or by [becoming a patron](https://www.patreon.com/mysticmode). Thank you! 😍
