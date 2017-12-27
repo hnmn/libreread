@@ -20,7 +20,7 @@ along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.--->
 * Install Docker Compose
 
 ## Install
-* `wget https://github.com/LibreRead/server/archive/v1.1.2.tar.gz --output-document=libreread.tar.gz`
+* `wget https://github.com/LibreRead/server/archive/v1.1.3.tar.gz --output-document=libreread.tar.gz`
 * `mkdir -p /var/libreread && tar xf libreread.tar.gz -C /var/libreread --strip-components 1 && rm libreread.tar.gz`
 * `cd /var/libreread`
 * `./install.sh`
