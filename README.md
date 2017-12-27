@@ -30,10 +30,10 @@ Self-hosted Free(Libre) Ebook Reader. https://libreread.org
  - Supports PDF & EPUB
  
 ### Production setup
-Please check [this guide](https://github.com/LibreRead/LibreRead/blob/master/docs/INSTALL.md)
+Please check [this guide](https://github.com/LibreRead/server/blob/master/docs/INSTALL.md)
 
 ### Development setup
-Install redis and elasticsearch(optional). if you want to use elasticsearch, do `export LIBREREAD_ELASTICSEARCH=1` and run the below commands.
+Install redis and optionally elasticsearch. if you want to use elasticsearch, do `export LIBREREAD_ELASTICSEARCH=1` and run the below commands.
  - `go get -d github.com/LibreRead/server/cmd/libreread`
  - `cd $GOPATH/src/github.com/LibreRead/server`
  - `go run ./cmd/libreread/main.go`
