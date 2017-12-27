@@ -1,6 +1,6 @@
 FROM golang:alpine as builder
 RUN apk add --no-cache musl-dev gcc git
-WORKDIR /go/src/github.com/LibreRead/LibreRead
+WORKDIR /go/src/github.com/LibreRead/server
 COPY . .
 RUN go-wrapper download
 RUN go-wrapper install ./cmd/libreread/
