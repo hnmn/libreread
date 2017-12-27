@@ -34,11 +34,9 @@ Please check [this guide](https://github.com/LibreRead/LibreRead/blob/master/doc
 
 ### Development setup
 Install redis and elasticsearch(optional). if you want to use elasticsearch, do `export LIBREREAD_ELASTICSEARCH=1` and run the below commands.
- - `go get github.com/LibreRead/LibreRead`
- - `cd $GOPATH/src/github.com/LibreRead/LibreRead`
- - `go get ./cmd/libreread`
- - `go build -o ./out/libreread ./cmd/libreread`
- - `./out/libreread`
+ - `go get -d github.com/LibreRead/server/cmd/libreread`
+ - `cd $GOPATH/src/github.com/LibreRead/server`
+ - `go run ./cmd/libreread/main.go`
  
  This will run the app on `localhost:8080`
 
