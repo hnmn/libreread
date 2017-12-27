@@ -28,6 +28,19 @@ Self-hosted Free(Libre) Ebook Reader. https://libreread.org
  - Full-text search
  - Highlight & Annotate
  - Supports PDF & EPUB
+ 
+### Production setup
+Please check [this guide](https://github.com/LibreRead/LibreRead/blob/master/docs/INSTALL.md)
+
+### Development setup
+Install redis and elasticsearch(optional). if you want to use elasticsearch, do `export LIBREREAD_ELASTICSEARCH=1` and run the below commands.
+ - `go get github.com/LibreRead/LibreRead`
+ - `cd $GOPATH/src/github.com/LibreRead/LibreRead`
+ - `go get ./cmd/libreread`
+ - `go build -o ./out/libreread ./cmd/libreread`
+ - `./out/libreread`
+ 
+ This will run the app on `localhost:8080`
 
 ### Supported by
 <img src="https://www.digitalocean.com/assets/media/logos-badges/png/DO_Logo_Horizontal_Black-a93a7c21.png" height="40px" alt="Supported by Digital Ocean" />
