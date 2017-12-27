@@ -33,7 +33,7 @@ Self-hosted Free(Libre) Ebook Reader. https://libreread.org
 Please check [this guide](https://github.com/LibreRead/server/blob/master/docs/INSTALL.md)
 
 ### Development setup
-Install redis and optionally elasticsearch. if you want to use elasticsearch, do `export LIBREREAD_ELASTICSEARCH=1` and run the below commands.
+Install go 1.9, redis 4 (default settings on port 6379) and optionally elasticsearch 5 (default settings on port 9200). if you want to use elasticsearch, do `export LIBREREAD_ELASTICSEARCH=1` and run the following commands.
  - `go get -d github.com/LibreRead/server/cmd/libreread`
  - `cd $GOPATH/src/github.com/LibreRead/server`
  - `go run ./cmd/libreread/main.go`
