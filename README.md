@@ -15,7 +15,7 @@ GNU Affero General Public License for more details.--->
 <!---You should have received a copy of the GNU Affero General Public License
 along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.--->
 
-# LibreRead [![Build Status](https://api.travis-ci.org/LibreRead/server.svg?branch=master)](https://travis-ci.org/LibreRead/server) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com) [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/wHCM7DZ)
+# LibreRead [![Build Status](https://api.travis-ci.org/LibreRead/server.svg?branch=master)](https://travis-ci.org/LibreRead/server) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com) [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/wHCM7DZ) [![PayPal Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.me/paynirmal) [![Become a Patron](https://img.shields.io/badge/Patron-Patreon-red.svg)](https://www.patreon.com/mysticmode)
 
 Self-hosted Free(Libre) Ebook Reader. https://libreread.org
 
