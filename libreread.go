@@ -63,6 +63,8 @@ const (
 	ESPATH_DEFAULT         = "http://localhost:9200"
 	REDISPATH_ENV          = "LIBREREAD_REDIS_PATH"
 	REDISPATH_DEFAULT      = "localhost:6379"
+	REDIS_PASSWORD_ENV     = "LIBREREAD_REDIS_PASSWORD"
+	REDIS_PASSWORD_DEFAULT = ""
 	ASSETPATH_ENV          = "LIBREREAD_ASSET_PATH"
 	ASSETPATH_DEFAULT      = "."
 	DOMAIN_ADDRESS_ENV     = "LIBREREAD_DOMAIN_ADDRESS"
@@ -81,6 +83,7 @@ var (
 	EnableES      = ENABLE_ES_DEFAULT
 	ESPath        = ESPATH_DEFAULT
 	RedisPath     = REDISPATH_DEFAULT
+	RedisPassword = REDIS_PASSWORD_DEFAULT
 	ServerPort    = PORT_DEFAULT
 	AssetPath     = ASSETPATH_DEFAULT
 	DomainAddress = DOMAIN_ADDRESS_DEFAULT
@@ -95,6 +98,7 @@ func init() {
 	EnableES = _GetEnv(ENABLE_ES_ENV, ENABLE_ES_DEFAULT)
 	ESPath = _GetEnv(ESPATH_ENV, ESPATH_DEFAULT)
 	RedisPath = _GetEnv(REDISPATH_ENV, REDISPATH_DEFAULT)
+	RedisPassword = _GetEnv(REDIS_PASSWORD_ENV, REDIS_PASSWORD_DEFAULT)
 	ServerPort = _GetEnv(PORT_ENV, PORT_DEFAULT)
 	AssetPath = _GetEnv(ASSETPATH_ENV, ASSETPATH_DEFAULT)
 	DomainAddress = _GetEnv(DOMAIN_ADDRESS_ENV, DOMAIN_ADDRESS_DEFAULT)
@@ -302,8 +306,8 @@ func StartServer() {
 	// Initiate redis
 	client := redis.NewClient(&redis.Options{
 		Addr:     RedisPath,
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Password: RedisPassword, // no password set
+		DB:       0,             // use default DB
 	})
 
 	// Create upload directory if not exist
