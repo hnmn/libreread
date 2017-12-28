@@ -239,7 +239,7 @@ func StartServer() {
 
 	// Bleve settings
 	// Check if bleve setting already exists. If not create a new setting.
-	if _, err := os.Stat("./lr_index.bleve"); os.IsNotExist(err) {
+	if _, err := os.Stat(path.Join(DBPath, "lr_index.bleve")); os.IsNotExist(err) {
 		mapping := bleve.NewIndexMapping()
 		index, err := bleve.New("lr_index.bleve", mapping)
 		CheckError(err)
