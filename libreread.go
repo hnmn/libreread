@@ -1295,7 +1295,7 @@ func (e *Env) GetPagination(c *gin.Context) {
 func (e *Env) GetSignIn(c *gin.Context) {
 	email := _GetEmailFromSession(c)
 	if email != nil {
-		c.Redirect(200, "/")
+		c.Redirect(302, "/")
 	}
 
 	rows, err := e.db.Query("select email from user where id = ?", 1)
