@@ -670,7 +670,7 @@ func (e *Env) EditBook(c *gin.Context) {
 
 		if EnableES == "0" {
 
-			index, _ := bleve.Open("lr_index.bleve")
+			index, _ := bleve.Open(path.Join(DBPath, "lr_index.bleve"))
 			indexId := strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + oTitle + "*****" + oAuthor + "*****" + oCover + "*****" + oURL + "*****"
 			err = index.Delete(indexId)
 			CheckError(err)
@@ -716,7 +716,7 @@ func (e *Env) EditBook(c *gin.Context) {
 				Author: author,
 			}
 
-			index, _ := bleve.Open("lr_index.bleve")
+			index, _ := bleve.Open(path.Join(DBPath, "lr_index.bleve"))
 			index.Index(message.Id, message)
 			err = index.Close()
 			CheckError(err)
@@ -814,7 +814,7 @@ func (e *Env) DeleteBook(c *gin.Context) {
 			}
 
 			if EnableES == "0" {
-				index, _ := bleve.Open("lr_index.bleve")
+				index, _ := bleve.Open(path.Join(DBPath, "lr_index.bleve"))
 				indexId := strconv.Itoa(int(userId)) + "*****" + strconv.Itoa(int(bookId)) + "*****" + title + "*****" + author + "*****" + cover + "*****" + url + "*****"
 				err = index.Delete(indexId)
 				CheckError(err)
@@ -2132,7 +2132,7 @@ func (e *Env) UploadBook(c *gin.Context) {
 					fmt.Println(bookId)
 
 					if EnableES == "0" {
-						index, err := bleve.Open("lr_index.bleve")
+						index, err := bleve.Open(path.Join(DBPath, "lr_index.bleve"))
 						CheckError(err)
 
 						message := struct {
@@ -2231,7 +2231,7 @@ func (e *Env) UploadBook(c *gin.Context) {
 					fmt.Println(bookId)
 
 					if EnableES == "0" {
-						index, err := bleve.Open("lr_index.bleve")
+						index, err := bleve.Open(path.Join(DBPath, "lr_index.bleve"))
 						CheckError(err)
 
 						message := struct {
@@ -2394,7 +2394,7 @@ func (e *Env) GetAutocomplete(c *gin.Context) {
 	if email != nil {
 		if EnableES == "0" {
 			fmt.Println("Searching bleve ...")
-			index, _ := bleve.Open("lr_index.bleve")
+			index, _ := bleve.Open(path.Join(DBPath, "lr_index.bleve"))
 			// err = index.Delete("1_3")
 			// CheckError(err)
 
