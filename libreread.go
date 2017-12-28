@@ -57,6 +57,8 @@ type Env struct {
 const (
 	PORT_DEFAULT           = "8080"
 	PORT_ENV               = "LIBREREAD_PORT"
+	DBPATH_ENV             = "LIBREREAD_DB_PATH"
+	DBPATH_DEFAULT         = "."
 	ENABLE_ES_ENV          = "LIBREREAD_ELASTICSEARCH"
 	ENABLE_ES_DEFAULT      = "0"
 	ESPATH_ENV             = "LIBREREAD_ES_PATH"
@@ -80,6 +82,7 @@ const (
 )
 
 var (
+	DBPath        = DBPATH_DEFAULT
 	EnableES      = ENABLE_ES_DEFAULT
 	ESPath        = ESPATH_DEFAULT
 	RedisPath     = REDISPATH_DEFAULT
@@ -95,6 +98,7 @@ var (
 
 func init() {
 	fmt.Println("Running init ...")
+	DBPath = _GetEnv(DBPATH_ENV, DBPATH_DEFAULT)
 	EnableES = _GetEnv(ENABLE_ES_ENV, ENABLE_ES_DEFAULT)
 	ESPath = _GetEnv(ESPATH_ENV, ESPATH_DEFAULT)
 	RedisPath = _GetEnv(REDISPATH_ENV, REDISPATH_DEFAULT)
@@ -107,6 +111,7 @@ func init() {
 	SMTPAddress = _GetEnv(SMTP_ADDRESS_ENV, SMTP_ADDRESS_DEFAULT)
 	SMTPPassword = _GetEnv(SMTP_PASSWORD_ENV, SMTP_PASSWORD_DEFAULT)
 
+	fmt.Printf("Database Path: %s\n", DBPath)
 	fmt.Printf("Enable Elasticsearch: %s\n", EnableES)
 	fmt.Printf("ElasticSearch: %s\n", ESPath)
 	fmt.Printf("Redis: %s\n", RedisPath)
@@ -132,7 +137,7 @@ func StartServer() {
 	r.LoadHTMLGlob(path.Join(AssetPath, "templates/*"))
 
 	// Open sqlite3 database
-	db, err := sql.Open("sqlite3", "./libreread.db")
+	db, err := sql.Open("sqlite3", path.Join(DBPath, "libreread.db"))
 	CheckError(err)
 
 	// Close sqlite3 database when all the functions are done
