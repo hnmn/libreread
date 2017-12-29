@@ -1545,10 +1545,8 @@ func _SendEmail(email string, name string, subject string, message string) {
 
 	if os.Getenv("LIBREREAD_CLOUDRON") == "1" {
 		fmt.Println("Cloudron mode for sending email")
-		fmt.Println("\n\n\n")
-		fmt.Println("swaks --to " + email + " --server " + os.Getenv("LIBREREAD_SMTP_SERVER") + " -p " + os.Getenv("LIBREREAD_SMTP_PORT") + " --from " + os.Getenv("LIBREREAD_SMTP_ADDRESS") + " --body " + "hello!" + " --auth-user " + os.Getenv("LIBREREAD_SMTP_USERNAME") + " --auth-password " + os.Getenv("LIBREREAD_SMTP_PASSWORD") + " -tlsc")
 
-		cmd := exec.Command("/usr/bin/swaks", "--to ", email, "--server", os.Getenv("LIBREREAD_SMTP_SERVER"), "-p", os.Getenv("LIBREREAD_SMTP_PORT"), "--from", os.Getenv("LIBREREAD_SMTP_ADDRESS"), "--body", "hello!", "--auth-user", os.Getenv("LIBREREAD_SMTP_USERNAME"), "--auth-password", os.Getenv("LIBREREAD_SMTP_PASSWORD"), "-tlsc")
+		cmd := exec.Command("/usr/bin/swaks", "--to ", email, "--server", os.Getenv("LIBREREAD_SMTP_SERVER"), "-p", os.Getenv("LIBREREAD_SMTP_PORT"), "--from", os.Getenv("LIBREREAD_SMTP_ADDRESS"), "--body", message, "--auth-user", os.Getenv("LIBREREAD_SMTP_USERNAME"), "--auth-password", os.Getenv("LIBREREAD_SMTP_PASSWORD"), "-tlsc")
 		stdout, err := cmd.Output()
 
 		if err != nil {
