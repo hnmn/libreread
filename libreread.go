@@ -1543,33 +1543,36 @@ func _SendEmail(email string, name string, subject string, message string) {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	fmt.Println(runtime.NumCPU())
 
-	m := gomail.NewMessage()
-	m.SetHeader("From", os.Getenv("LIBREREAD_SMTP_ADDRESS"))
-	m.SetHeader("To", email)
-	m.SetHeader("Subject", subject)
-	m.SetBody("text/html", message)
-
-	smtp_server := os.Getenv("LIBREREAD_SMTP_SERVER")
-	smtp_port, err := strconv.Atoi(os.Getenv("LIBREREAD_SMTP_PORT"))
-	CheckError(err)
-
-	var smtp_address string
 	if os.Getenv("LIBREREAD_CLOUDRON") == "1" {
-		smtp_address = os.Getenv("LIBREREAD_SMTP_USERNAME")
+		cmd := exec.Command("swaks", "--server", "$LIBREREAD_SMTP_SERVER", "-p", "$LIBREREAD_SMTP_PORT", "--from", "$LIBREREAD_SMTP_ADDRESS", "--body", "hello!", "--auth-user", "$LIBREREAD_SMTP_USERNAME", "--auth-password", "$LIBREREAD_SMTP_PASSWORD", "-tlsc")
+
+		err := cmd.Run()
+		CheckError(err)
 	} else {
+		m := gomail.NewMessage()
+		m.SetHeader("From", os.Getenv("LIBREREAD_SMTP_ADDRESS"))
+		m.SetHeader("To", email)
+		m.SetHeader("Subject", subject)
+		m.SetBody("text/html", message)
+
+		smtp_server := os.Getenv("LIBREREAD_SMTP_SERVER")
+		smtp_port, err := strconv.Atoi(os.Getenv("LIBREREAD_SMTP_PORT"))
+		CheckError(err)
+
+		var smtp_address string
 		smtp_address = os.Getenv("LIBREREAD_SMTP_ADDRESS")
-	}
 
-	smtp_password := os.Getenv("LIBREREAD_SMTP_PASSWORD")
+		smtp_password := os.Getenv("LIBREREAD_SMTP_PASSWORD")
 
-	d := gomail.NewDialer(smtp_server, smtp_port, smtp_address, smtp_password)
+		d := gomail.NewDialer(smtp_server, smtp_port, smtp_address, smtp_password)
 
-	// Send the confirmation email
-	if err := d.DialAndSend(m); err != nil {
-		fmt.Println("Email Error:")
-		fmt.Println(err)
-	} else {
-		fmt.Println("Email sent successfully")
+		// Send the confirmation email
+		if err := d.DialAndSend(m); err != nil {
+			fmt.Println("Email Error:")
+			fmt.Println(err)
+		} else {
+			fmt.Println("Email sent successfully")
+		}
 	}
 }
 
