@@ -1547,8 +1547,13 @@ func _SendEmail(email string, name string, subject string, message string) {
 		fmt.Println("Cloudron mode for sending email")
 		cmd := exec.Command("swaks", "--server", "$LIBREREAD_SMTP_SERVER", "-p", "$LIBREREAD_SMTP_PORT", "--from", "$LIBREREAD_SMTP_ADDRESS", "--body", "hello!", "--auth-user", "$LIBREREAD_SMTP_USERNAME", "--auth-password", "$LIBREREAD_SMTP_PASSWORD", "-tlsc")
 
+		var out bytes.Buffer
+		cmd.Stdout = &out
+
 		err := cmd.Run()
 		CheckError(err)
+
+		fmt.Println(out.String())
 	} else {
 		m := gomail.NewMessage()
 		m.SetHeader("From", os.Getenv("LIBREREAD_SMTP_ADDRESS"))
