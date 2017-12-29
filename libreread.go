@@ -1552,7 +1552,14 @@ func _SendEmail(email string, name string, subject string, message string) {
 	smtp_server := os.Getenv("LIBREREAD_SMTP_SERVER")
 	smtp_port, err := strconv.Atoi(os.Getenv("LIBREREAD_SMTP_PORT"))
 	CheckError(err)
-	smtp_address := os.Getenv("LIBREREAD_SMTP_ADDRESS")
+
+	var smtp_address string
+	if os.Getenv("LIBREREAD_CLOUDRON") == "1" {
+		smtp_address = os.Getenv("LIBREREAD_SMTP_USERNAME")
+	} else {
+		smtp_address = os.Getenv("LIBREREAD_SMTP_ADDRESS")
+	}
+
 	smtp_password := os.Getenv("LIBREREAD_SMTP_PASSWORD")
 
 	d := gomail.NewDialer(smtp_server, smtp_port, smtp_address, smtp_password)
