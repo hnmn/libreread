@@ -21,6 +21,7 @@ package libreread
 
 import (
 	"bytes"
+	"crypto/tls"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -1556,11 +1557,14 @@ func _SendEmail(email string, name string, subject string, message string) {
 	smtp_password := os.Getenv("LIBREREAD_SMTP_PASSWORD")
 
 	d := gomail.NewDialer(smtp_server, smtp_port, smtp_address, smtp_password)
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 
 	// Send the confirmation email
 	if err := d.DialAndSend(m); err != nil {
 		fmt.Println("Email Error:")
 		fmt.Println(err)
+	} else {
+		fmt.Println("Email sent successfully")
 	}
 }
 
