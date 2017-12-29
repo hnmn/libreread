@@ -1550,6 +1550,8 @@ func _SendEmail(email string, name string, subject string, message string) {
 		var out bytes.Buffer
 		cmd.Stdout = &out
 
+		fmt.Println(out)
+
 		err := cmd.Run()
 		CheckError(err)
 
