@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.
 
+set -e
+
 echo Please enter your domain address, Eg: www.example.com
 read domain_address
 
