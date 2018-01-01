@@ -25,7 +25,7 @@ along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.--->
 ## Install
 By Default, LibreRead offers a metadata search. But if you want to enable full-text search across all the book content, you will need to enable Elasticsearch by entering `Y` when the install script prompts for that.
 
-* `wget https://github.com/LibreRead/server/archive/v1.1.8.tar.gz --output-document=libreread.tar.gz`
+* `wget https://github.com/LibreRead/server/archive/v1.2.3.tar.gz --output-document=libreread.tar.gz`
 * `mkdir -p /var/libreread && tar xf libreread.tar.gz -C /var/libreread --strip-components 1 && rm libreread.tar.gz`
 * `cd /var/libreread`
 * `./install.sh`
