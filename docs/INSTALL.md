@@ -16,10 +16,15 @@ GNU Affero General Public License for more details.--->
 along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.--->
 
 ## Requirements to run the install script
-* Install Docker 17.05 or higher
-* Install Docker Compose
+* Modern single core CPU, dual core is recommended if you want to upload high volume of books.
+* Minimum 256MB of RAM, 2GB is recommended if you want to enable full-text search with Elasticsearch.
+* 64 bit Linux compatible with Docker.
+* Docker 17.05 or higher.
+* Docker Compose.
 
 ## Install
+By Default, LibreRead offers a metadata search. But if you want to enable full-text search across all the book content, you will need to enable Elasticsearch by entering `Y` when the install script prompts for that.
+
 * `wget https://github.com/LibreRead/server/archive/v1.1.8.tar.gz --output-document=libreread.tar.gz`
 * `mkdir -p /var/libreread && tar xf libreread.tar.gz -C /var/libreread --strip-components 1 && rm libreread.tar.gz`
 * `cd /var/libreread`
