@@ -1,4 +1,4 @@
-<!---Copyright 2017 Nirmal Kumar--->
+<!---Copyright 2017-2020 Nirmal Kumar--->
 
 <!---This file is part of LibreRead.--->
 
@@ -15,9 +15,9 @@ GNU Affero General Public License for more details.--->
 <!---You should have received a copy of the GNU Affero General Public License
 along with LibreRead.  If not, see <http://www.gnu.org/licenses/>.--->
 
-# LibreRead [![Build Status](https://api.travis-ci.org/LibreRead/server.svg?branch=master)](https://travis-ci.org/LibreRead/server) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com) [![Chat](https://img.shields.io/badge/chat-Rocket.Chat-red.svg)](https://chat.libreread.org) [![PayPal Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.me/paynirmal) [![Become a Patron](https://img.shields.io/badge/Patron-Patreon-red.svg)](https://www.patreon.com/mysticmode)
+# LibreRead [Maintainers needed]
 
-Self-hosted Free(Libre) Ebook Reader. https://libreread.org
+Self-hosted Free(Libre) Ebook Reader where you can highlight & annotate content. It supports PDF & EPUB formats. This project is not under active development and we are expecting maintainers who could take this up and improve this software.
 
 ![Alt text](/static/img/screenshot.png?raw=true "Home Page")
 
@@ -31,17 +31,12 @@ Self-hosted Free(Libre) Ebook Reader. https://libreread.org
  - Supports PDF & EPUB
  
 ### Production setup
-Please check [this guide](https://github.com/LibreRead/server/blob/master/docs/INSTALL.md)
+Please check [this guide](https://github.com/mysticmode/libreread/blob/master/docs/INSTALL.md)
 
 ### Development setup
-Install go 1.9, redis 4 (default settings on port 6379) and optionally elasticsearch 5 (default settings on port 9200). If you want to use elasticsearch, do `export LIBREREAD_ELASTICSEARCH=1` and run the following commands.
+Install go 1.9 or higher, redis 4 (default settings on port 6379) and optionally elasticsearch 5 (default settings on port 9200). If you want to use elasticsearch, do `export LIBREREAD_ELASTICSEARCH=1` and run the following commands.
  - `go get -d github.com/LibreRead/server/cmd/libreread`
  - `cd $GOPATH/src/github.com/LibreRead/server`
  - `go run ./cmd/libreread/main.go`
  
  This will run the app on `localhost:8080`
-
-### Supported by
-<img src="https://www.digitalocean.com/assets/media/logos-badges/png/DO_Logo_Horizontal_Black-a93a7c21.png" height="40px" alt="Supported by Digital Ocean" />
-
-If you find LibreRead useful, you could support our development by either making an [one-time donation](https://www.paypal.me/paynirmal) or by [becoming a patron](https://www.patreon.com/mysticmode). Thank you! 😍
